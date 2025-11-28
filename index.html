@@ -776,45 +776,24 @@
         }
 
         function loadDashboardData() {
-            // Load recent activity
-            document.getElementById('recentActivity').innerHTML = `
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--neutral); border-radius: 8px;">
-                        <div>
-                            <div style="font-weight: 600;">New shop registered</div>
-                            <div style="font-size: 12px; color: var(--text-light);">Cosmic Store - 10 minutes ago</div>
-                        </div>
-                        <span class="status-badge status-pending">Pending</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--neutral); border-radius: 8px;">
-                        <div>
-                            <div style="font-weight: 600;">Large order completed</div>
-                            <div style="font-size: 12px; color: var(--text-light);">Order #DK7842 - ₹2,840 - 25 minutes ago</div>
-                        </div>
-                        <span class="status-badge status-active">Completed</span>
-                    </div>
-                </div>
-            `;
-            
-            // Load pending approvals
-            document.getElementById('pendingApprovals').innerHTML = `
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>New Shop Applications</span>
-                        <span style="font-weight: 600; color: var(--admin-primary);">${platformStats.pendingApprovals}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>Product Moderation</span>
-                        <span style="font-weight: 600; color: var(--warning);">12</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>Withdrawal Requests</span>
-                        <span style="font-weight: 600; color: var(--success);">5</span>
-                    </div>
-                </div>
-            `;
-        }
-
+    // Clean Recent Activity
+    document.getElementById('recentActivity').innerHTML = `
+        <div style="text-align: center; padding: 40px; color: var(--text-light);">
+            <i class="fas fa-inbox" style="font-size: 50px; margin-bottom: 15px;"></i>
+            <h4 style="color: var(--text-light); margin-bottom: 10px;">No Activity Yet</h4>
+            <p>Activity will appear here as your platform grows</p>
+        </div>
+    `;
+    
+    // Clean Pending Approvals
+    document.getElementById('pendingApprovals').innerHTML = `
+        <div style="text-align: center; padding: 20px; color: var(--text-light);">
+            <i class="fas fa-check-circle" style="font-size: 40px; margin-bottom: 10px;"></i>
+            <p>No Pending Approvals</p>
+            <small>You're all caught up!</small>
+        </div>
+    `;
+}
         function loadShopsData() {
             // This would load real shop data from Firebase
             console.log('Loading shops data...');
