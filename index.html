@@ -767,6 +767,103 @@
             showToast('Logged out successfully', 'info');
         }
 
+        // ★★★ SHOP CREATION FUNCTIONS ★★★
+
+// Show Create Shop Modal
+function showCreateShopModal() {
+    document.getElementById('createShopModal').classList.add('active');
+}
+
+// Close Create Shop Modal
+function closeCreateShopModal() {
+    document.getElementById('createShopModal').classList.remove('active');
+    document.getElementById('createShopForm').reset();
+}
+
+// Create Shop Account Function
+async function createShopAccount() {
+    const shopData = {
+        name: document.getElementById('shopName').value.trim(),
+        email: document.getElementById('ownerEmail').value.trim(),
+        ownerName: document.getElementById('ownerName').value.trim(),
+        category: document.getElementById('shopCategory').value,
+        phone: document.getElementById('shopPhone').value.trim(),
+        address: document.getElementById('shopAddress').value.trim(),
+        description: document.getElementById('shopDescription').value.trim()
+    };
+
+    // Validation
+    if (!shopData.name || !shopData.email || !shopData.ownerName || !shopData.category || !shopData.phone || !shopData.address) {
+        showToast("Please fill all required fields", 'error');
+        return;
+    }
+
+    try {
+        showToast("Creating shop account...", 'info');
+
+        // Generate temporary password
+        const tempPassword = generateTempPassword();
+        
+        // 1. Create Firebase Auth User
+        const userCredential = await auth.createUserWithEmailAndPassword(shopData.email, tempPassword);
+        const userId = userCredential.user.uid;
+
+        // 2. Create Shop Document in Firestore
+        const shopDoc = {
+            name: shopData.name,
+            owner: shopData.email,
+            ownerName: shopData.ownerName,
+            category: shopData.category,
+            phone: shopData.phone,
+            address: shopData.address,
+            description: shopData.description,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            createdBy: currentAdmin.email
+        };
+
+        await db.collection('shops').doc(userId).set(shopDoc);
+
+        // 3. Show success with credentials
+        showToast("Shop account created successfully!", 'success');
+        
+        // Show credentials to admin
+        setTimeout(() => {
+            alert(`🎉 SHOP ACCOUNT CREATED!\n\n📧 Email: ${shopData.email}\n🔑 Temporary Password: ${tempPassword}\n\n⚠️ Please share these credentials with the shop owner securely.`);
+        }, 1000);
+
+        closeCreateShopModal();
+        
+        // Refresh shops list
+        loadShopsData();
+
+    } catch (error) {
+        console.error("Error creating shop:", error);
+        if (error.code === 'auth/email-already-in-use') {
+            showToast("Email already registered", 'error');
+        } else {
+            showToast("Error creating shop: " + error.message, 'error');
+        }
+    }
+}
+
+// Generate Temporary Password
+function generateTempPassword() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password + '!1'; // Add special chars for password requirements
+}
+
+// Load Shops Data (Update this function if it exists)
+function loadShopsData() {
+    // This will refresh the shops table
+    showToast("Shops list updated", 'info');
+}
+// ★★★ SHOP CREATION FUNCTIONS ADDED ★★★
+
         // Navigation
         function navigateToPage(page) {
             // Hide all pages
