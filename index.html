@@ -606,6 +606,63 @@
         </div>
     </div>
 
+    <!-- Create Shop Modal -->
+<div class="modal-overlay" id="createShopModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Create New Shop</h3>
+            <button class="modal-close" onclick="closeCreateShopModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="createShopForm">
+                <div class="form-group">
+                    <label class="form-label">Shop Name *</label>
+                    <input type="text" class="form-control" id="shopName" placeholder="Enter shop name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Owner Email *</label>
+                    <input type="email" class="form-control" id="ownerEmail" placeholder="Enter owner email" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Owner Name *</label>
+                    <input type="text" class="form-control" id="ownerName" placeholder="Enter owner full name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category *</label>
+                    <select class="form-control" id="shopCategory" required>
+                        <option value="">Select Category</option>
+                        <option value="groceries">Groceries</option>
+                        <option value="cosmetics">Cosmetics</option>
+                        <option value="clothing">Clothing</option>
+                        <option value="vegetables">Vegetables</option>
+                        <option value="electronics">Electronics</option>
+                        <option value="bakery">Bakery</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number *</label>
+                    <input type="tel" class="form-control" id="shopPhone" placeholder="Enter phone number" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Address *</label>
+                    <textarea class="form-control" id="shopAddress" placeholder="Enter shop address" rows="2" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" id="shopDescription" placeholder="Shop description" rows="2"></textarea>
+                </div>
+                <div class="alert alert-info">
+                    <small><i class="fas fa-info-circle"></i> Login credentials will be sent to the owner's email</small>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-outline" onclick="closeCreateShopModal()">Cancel</button>
+            <button type="button" class="btn-primary" onclick="createShopAccount()">Create Shop Account</button>
+        </div>
+    </div>
+</div>
+
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
