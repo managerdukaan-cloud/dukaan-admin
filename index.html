@@ -656,32 +656,35 @@
 
         // Admin Authentication
         async function handleAdminLogin(event) {
-            event.preventDefault();
-            
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
+    event.preventDefault();
+    
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
 
-            try {
-                showToast('Authenticating admin...', 'info');
-                // In a real app, you would have special admin authentication
-                // For demo, we'll use a simple check
-                if (email.includes('admin') && password.length >= 6) {
-                    currentAdmin = { 
-                        uid: 'admin-' + Date.now(), 
-                        email: email,
-                        displayName: 'Super Admin',
-                        isAdmin: true
-                    };
-                    showAdminScreen();
-                    showToast('Welcome to Dukaan Admin Panel!', 'success');
-                } else {
-                    showToast('Invalid admin credentials', 'error');
-                }
-            } catch (error) {
-                console.error('Admin login error:', error);
-                showToast('Login failed: ' + error.message, 'error');
-            }
-        }
+    // DEMO ADMINS (Yeh already kaam karenge)
+    const demoAdmins = [
+        { email: 'admin@dukaan.com', password: 'admin123' },
+        { email: 'superadmin@dukaan.com', password: 'super123' },
+        { email: 'admin@company.com', password: 'admin123' }
+    ];
+    
+    const isDemoAdmin = demoAdmins.some(admin => 
+        admin.email === email && admin.password === password
+    );
+    
+    if (isDemoAdmin) {
+        currentAdmin = { 
+            uid: 'demo-admin-' + Date.now(), 
+            email: email,
+            displayName: 'Admin User',
+            isAdmin: true
+        };
+        showAdminScreen();
+        showToast('Admin Login Successful! 👋', 'success');
+    } else {
+        showToast('Use: admin@dukaan.com / admin123', 'error');
+    }
+}
 
         function demoLogin() {
             document.getElementById('loginEmail').value = 'admin@dukaan.com';
