@@ -1092,47 +1092,6 @@ async function refreshShopsList() {
     console.log("❌ shopsTable still not found after 3 attempts");
     alert("✅ Shop created! Please refresh the shops page manually.");
 }
-
-        // ✅ NEW: CREATE TEMPORARY SHOPS CONTAINER
-        function createTemporaryShopsContainer(snapshot) {
-            // Remove existing temporary container if any
-            const existingTemp = document.getElementById('tempShopsContainer');
-            if (existingTemp) existingTemp.remove();
-            
-            // Create new temporary container
-            const tempContainer = document.createElement('div');
-            tempContainer.id = 'tempShopsContainer';
-            tempContainer.style.cssText = `
-                padding: 20px;
-                margin: 20px;
-                border: 2px dashed #0F2C59;
-                border-radius: 10px;
-                background: #f8f9fa;
-            `;
-            
-            let html = '<h2 style="color: #0F2C59;">🏪 Shops List (Temporary View)</h2>';
-            
-            if (snapshot.empty) {
-                html += '<div class="empty-state">No shops registered yet</div>';
-            } else {
-                snapshot.forEach(doc => {
-                    const shop = doc.data();
-                    html += `
-                        <div style="border:1px solid #ddd; padding:15px; margin:10px; border-radius:8px; background:white;">
-                            <h3 style="margin:0; color: #0F2C59;">${shop.name}</h3>
-                            <p style="margin:5px 0;"><strong>Owner:</strong> ${shop.ownerName || shop.owner}</p>
-                            <p style="margin:5px 0;"><strong>Email:</strong> ${shop.owner}</p>
-                            <p style="margin:5px 0;"><strong>Category:</strong> ${shop.category}</p>
-                            <p style="margin:5px 0;"><strong>Phone:</strong> ${shop.phone || 'Not provided'}</p>
-                        </div>
-                    `;
-                });
-            }
-            
-            tempContainer.innerHTML = html;
-            document.body.appendChild(tempContainer);
-            console.log("✅ Created temporary shops container");
-        }
         // Navigation
         function navigateToPage(page) {
             // Hide all pages
