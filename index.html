@@ -1121,7 +1121,7 @@ async function refreshShopsList() {
             }
         }
 
-        // Data Loading Functions
+                // Data Loading Functions
         async function loadPlatformStats() {
             platformStats = {
                 totalRevenue: 0,
@@ -1132,7 +1132,7 @@ async function refreshShopsList() {
             };
             
             updateStatsDisplay();
-        }
+        } // ✅ ADD THIS CLOSING BRACKET
 
         function updateStatsDisplay() {
             document.getElementById('totalRevenue').textContent = `₹${platformStats.totalRevenue.toLocaleString()}`;
@@ -1146,46 +1146,53 @@ async function refreshShopsList() {
             document.getElementById('sidebarRevenue').textContent = `₹0`;
         }
 
-                async function loadDashboardData() {
-    try {
-        // FIXED: Load real-time platform statistics
-        const [shopsSnapshot, ordersSnapshot, usersSnapshot, productsSnapshot] = await Promise.all([
-            db.collection('shops').get(),
-            db.collection('orders').get(),
-            db.collection('users').get(),
-            db.collection('products').get()
-        ]);
+                        async function loadDashboardData() {
+            try {
+                // FIXED: Load real-time platform statistics
+                const [shopsSnapshot, ordersSnapshot, usersSnapshot, productsSnapshot] = await Promise.all([
+                    db.collection('shops').get(),
+                    db.collection('orders').get(),
+                    db.collection('users').get(),
+                    db.collection('products').get()
+                ]);
 
-        // ✅ FIXED: Safe element updates with null checks
-        const updateElement = (id, value) => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = value;
-            } else {
-                console.log(`⚠️ Element not found: ${id}`);
+                // ✅ FIXED: Safe element updates with null checks
+                const updateElement = (id, value) => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.textContent = value;
+                    } else {
+                        console.log(`⚠️ Element not found: ${id}`);
+                    }
+                };
+
+                // Update statistics cards safely
+                updateElement('totalShops', shopsSnapshot.size);
+                updateElement('totalOrders', ordersSnapshot.size);
+                updateElement('totalUsers', usersSnapshot.size);
+                updateElement('totalProducts', productsSnapshot.size);
+
+                // Calculate total revenue
+                let totalRevenue = 0;
+                ordersSnapshot.forEach(doc => {
+                    const order = doc.data();
+                    totalRevenue += order.total || 0;
+                });
+                
+                // Update revenue safely
+                const revenueEl = document.getElementById('totalRevenue');
+                if (revenueEl) {
+                    revenueEl.textContent = `₹${totalRevenue}`;
+                } else {
+                    console.log('⚠️ totalRevenue element not found');
+                }
+
+                console.log("✅ Dashboard loaded successfully");
+
+            } catch (error) {
+                console.error("❌ Dashboard error:", error);
             }
-        };
-
-        // Update statistics cards safely
-        updateElement('totalShops', shopsSnapshot.size);
-        updateElement('totalOrders', ordersSnapshot.size);
-        updateElement('totalUsers', usersSnapshot.size);
-        updateElement('totalProducts', productsSnapshot.size);
-
-        // Calculate total revenue
-        let totalRevenue = 0;
-        ordersSnapshot.forEach(doc => {
-            const order = doc.data();
-            totalRevenue += order.total || 0;
-        });
-        
-        // Update revenue safely
-        const revenueEl = document.getElementById('totalRevenue');
-        if (revenueEl) {
-            revenueEl.textContent = `₹${totalRevenue}`;
-        } else {
-            console.log('⚠️ totalRevenue element not found');
-        }
+        } // ✅ ADD THIS CLOSING BRACKET
 
         // Load recent activity safely
         const recentActivityEl = document.getElementById('recentActivity');
