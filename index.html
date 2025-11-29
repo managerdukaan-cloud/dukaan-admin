@@ -777,7 +777,7 @@
         }
 
         // Admin Authentication
-        async function handleAdminLogin(event) {
+                async function handleAdminLogin(event) {
             event.preventDefault();
             
             const email = document.getElementById('loginEmail').value;
@@ -792,32 +792,37 @@
             try {
                 showToast('Authenticating admin...', 'info');
                 
-                // Demo Admin for testing
-                const demoAdmins = [
-                    { email: 'admin@dukaan.com', password: 'admin123' },
-                    { email: 'superadmin@dukaan.com', password: 'super123' }
-                ];
+                // FIXED: Use Firebase Authentication for admin login
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
                 
-                const isDemoAdmin = demoAdmins.some(admin => 
-                    admin.email === email && admin.password === password
-                );
+                // FIXED: Check if user is actually an admin
+                const userDoc = await db.collection('users').doc(user.uid).get();
                 
-                if (isDemoAdmin) {
+                if (userDoc.exists && userDoc.data().role === 'admin') {
                     currentAdmin = { 
-                        uid: 'demo-admin-' + Date.now(), 
-                        email: email,
-                        displayName: 'Admin User',
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.displayName || 'Admin User',
                         isAdmin: true
                     };
                     showAdminScreen();
                     showToast('Welcome to Admin Panel!', 'success');
                 } else {
-                    showToast('Invalid admin credentials', 'error');
+                    // Not an admin, sign them out
+                    await auth.signOut();
+                    showToast('Access denied. Admin privileges required.', 'error');
                 }
                 
             } catch (error) {
                 console.error('Admin login error:', error);
-                showToast('Login failed: ' + error.message, 'error');
+                if (error.code === 'auth/invalid-credential') {
+                    showToast('Invalid email or password', 'error');
+                } else if (error.code === 'auth/user-not-found') {
+                    showToast('Admin account not found', 'error');
+                } else {
+                    showToast('Login failed: ' + error.message, 'error');
+                }
             }
         }
 
@@ -1174,9 +1179,25 @@
             showToast('Notifications feature coming soon!', 'info');
         }
 
-        function checkAdminAuth() {
+                function checkAdminAuth() {
             // Check if admin is already logged in
         }
+
+        // FIXED: Check if admin is already logged in
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists && userDoc.data().role === 'admin') {
+                    currentAdmin = {
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.displayName || 'Admin User',
+                        isAdmin: true
+                    };
+                    showAdminScreen();
+                }
+            }
+        });
 
         // Initialize the admin app when DOM is loaded
         document.addEventListener('DOMContentLoaded', initAdminApp);
