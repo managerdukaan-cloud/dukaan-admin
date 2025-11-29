@@ -997,16 +997,16 @@ document.head.appendChild(style);
         }
 
         // ✅ FIXED: LOAD SHOPS DATA WITH BETTER ERROR HANDLING
-        async function loadShopsData() {
-            try {
-                const snapshot = await db.collection('shops').get();
-                const shopsList = document.getElementById('shopsList');
-                
-                if (!shopsList) {
-                    console.error("❌ shopsList element not found - creating temporary");
-                    createTemporaryShopsContainer(snapshot);
-                    return;
-                }
+async function loadShopsData() {
+    try {
+        const snapshot = await db.collection('shops').get();
+        const shopsTable = document.getElementById('shopsTable'); // ✅ CHANGE HERE
+        
+        if (!shopsTable) {
+            console.error("❌ shopsTable element not found - creating temporary");
+            createTemporaryShopsContainer(snapshot);
+            return;
+        }
                 
                 if (snapshot.empty) {
                     shopsList.innerHTML = '<div class="empty-state">No shops registered yet</div>';
@@ -1050,25 +1050,25 @@ document.head.appendChild(style);
         }
 
         // ✅ NEW: REFRESH SHOPS LIST WITH MULTIPLE ATTEMPTS
-        async function refreshShopsList() {
-            console.log("🔄 Refreshing shops list...");
-            
-            // Try multiple times with delay
-            for (let attempt = 1; attempt <= 3; attempt++) {
-                await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-                
-                const shopsList = document.getElementById('shopsList');
-                if (shopsList) {
-                    console.log(`✅ shopsList found on attempt ${attempt}`);
-                    await loadShopsData();
-                    return;
-                }
-                console.log(`⏳ shopsList not found, attempt ${attempt}/3`);
-            }
-            
-            console.log("❌ shopsList still not found after 3 attempts");
-            alert("✅ Shop created! Please refresh the shops page manually.");
+async function refreshShopsList() {
+    console.log("🔄 Refreshing shops list...");
+    
+    // Try multiple times with delay
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        
+        const shopsTable = document.getElementById('shopsTable'); // ✅ CHANGE HERE
+        if (shopsTable) {
+            console.log(`✅ shopsTable found on attempt ${attempt}`);
+            await loadShopsData();
+            return;
         }
+        console.log(`⏳ shopsTable not found, attempt ${attempt}/3`);
+    }
+    
+    console.log("❌ shopsTable still not found after 3 attempts");
+    alert("✅ Shop created! Please refresh the shops page manually.");
+}
 
         // ✅ NEW: CREATE TEMPORARY SHOPS CONTAINER
         function createTemporaryShopsContainer(snapshot) {
