@@ -737,6 +737,65 @@
             appId: "1:75765851780:web:dd9567db1d39c3b09c84d1"
         };
 
+        // ✅ TOAST NOTIFICATION SYSTEM - ADD THIS
+function showToast(message, type = 'info') {
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        toastContainer.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            max-width: 400px;
+        `;
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `admin-toast admin-toast-${type}`;
+    toast.style.cssText = `
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#3b82f6'};
+        color: white;
+        padding: 12px 16px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    const icon = type === 'success' ? 'fa-check-circle' : 
+                type === 'error' ? 'fa-exclamation-circle' :
+                type === 'warning' ? 'fa-exclamation-triangle' : 
+                'fa-info-circle';
+    
+    toast.innerHTML = `<i class="fas ${icon}" style="font-size: 16px;"></i><span>${message}</span>`;
+    toastContainer.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(400px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(400px); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+        
         // Initialize Firebase
         let auth, db;
         try {
@@ -933,52 +992,57 @@
             return password + '!1';
         }
 
-                // Load Shops Data - FIXED: Real-time from Firebase
-        async function loadShopsData() {
-            try {
-                const snapshot = await db.collection('shops').get();
-                const shopsList = document.getElementById('shopsList');
-                
-                if (snapshot.empty) {
-                    shopsList.innerHTML = '<div class="empty-state">No shops registered yet</div>';
-                    return;
-                }
-                
-                let shopsHtml = '';
-                snapshot.forEach(doc => {
-                    const shop = { id: doc.id, ...doc.data() };
-                    shopsHtml += `
-                        <div class="shop-card">
-                            <div class="shop-header">
-                                <h3>${shop.name}</h3>
-                                <span class="status-badge ${shop.isActive ? 'active' : 'inactive'}">
-                                    ${shop.isActive ? 'Active' : 'Inactive'}
-                                </span>
-                            </div>
-                            <div class="shop-details">
-                                <p><strong>Owner:</strong> ${shop.ownerName}</p>
-                                <p><strong>Email:</strong> ${shop.owner}</p>
-                                <p><strong>Category:</strong> ${shop.category}</p>
-                                <p><strong>Phone:</strong> ${shop.phone}</p>
-                                <p><strong>Address:</strong> ${shop.address}</p>
-                                ${shop.description ? `<p><strong>Description:</strong> ${shop.description}</p>` : ''}
-                            </div>
-                            <div class="shop-actions">
-                                <button class="btn-primary" onclick="editShop('${shop.id}')">Edit</button>
-                                <button class="btn-danger" onclick="deleteShop('${shop.id}')">Delete</button>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                shopsList.innerHTML = shopsHtml;
-                showToast("Shops list updated", 'info');
-                
-            } catch (error) {
-                console.error("Error loading shops:", error);
-                showToast("Error loading shops", 'error');
-            }
+                // ✅ LOAD SHOPS DATA - FIXED
+async function loadShopsData() {
+    try {
+        const snapshot = await db.collection('shops').get();
+        const shopsList = document.getElementById('shopsList');
+        
+        if (!shopsList) {
+            console.error("shopsList element not found");
+            return;
         }
+        
+        if (snapshot.empty) {
+            shopsList.innerHTML = '<div class="empty-state">No shops registered yet</div>';
+            return;
+        }
+        
+        let shopsHtml = '';
+        snapshot.forEach(doc => {
+            const shop = { id: doc.id, ...doc.data() };
+            shopsHtml += `
+                <div class="shop-card">
+                    <div class="shop-header">
+                        <h3>${shop.name}</h3>
+                        <span class="status-badge ${shop.isActive ? 'active' : 'inactive'}">
+                            ${shop.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                    </div>
+                    <div class="shop-details">
+                        <p><strong>Owner:</strong> ${shop.ownerName || shop.owner}</p>
+                        <p><strong>Email:</strong> ${shop.owner}</p>
+                        <p><strong>Category:</strong> ${shop.category}</p>
+                        <p><strong>Phone:</strong> ${shop.phone || 'Not provided'}</p>
+                        <p><strong>Address:</strong> ${shop.address}</p>
+                        ${shop.description ? `<p><strong>Description:</strong> ${shop.description}</p>` : ''}
+                    </div>
+                    <div class="shop-actions">
+                        <button class="btn-primary" onclick="editShop('${shop.id}')">Edit</button>
+                        <button class="btn-danger" onclick="deleteShop('${shop.id}')">Delete</button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        shopsList.innerHTML = shopsHtml;
+        showToast("Shops list updated", 'info');
+        
+    } catch (error) {
+        console.error("Error loading shops:", error);
+        showToast("Error loading shops", 'error');
+    }
+}
 
         // Navigation
         function navigateToPage(page) {
@@ -1174,11 +1238,11 @@
             showToast('Notifications feature coming soon!', 'info');
         }
 
-                function checkAdminAuth() {
+                        function checkAdminAuth() {
             // Check if admin is already logged in
         }
 
-        // FIXED: Check if admin is already logged in
+        // ✅ FIX 3: ADMIN AUTH CHECK - ADD THIS
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 const userDoc = await db.collection('users').doc(user.uid).get();
@@ -1193,6 +1257,12 @@
                 }
             }
         });
+
+        // Initialize the admin app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initAdminApp);
+    </script>
+</body>
+</html>
 
         // Initialize the admin app when DOM is loaded
         document.addEventListener('DOMContentLoaded', initAdminApp);
