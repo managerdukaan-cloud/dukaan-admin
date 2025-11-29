@@ -1139,21 +1139,24 @@
             console.log("❌ shopsTable still not found after 3 attempts");
         }
 
-        // Event Listeners
+                // Event Listeners
         document.addEventListener('DOMContentLoaded', function() {
             initAdminApp();
             
             document.getElementById('loginForm').addEventListener('submit', handleAdminLogin);
             
-            // Navigation click events
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    const page = this.getAttribute('data-page');
-                    if (page) {
-                        navigateToPage(page);
-                    }
+            // ✅ FIXED: Navigation click events - ADD THIS
+            setTimeout(() => {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        const page = this.getAttribute('data-page');
+                        if (page) {
+                            navigateToPage(page);
+                        }
+                    });
                 });
-            });
+                console.log("✅ Navigation events attached");
+            }, 1000);
         });
     </script>
 </body>
