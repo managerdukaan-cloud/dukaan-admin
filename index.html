@@ -899,7 +899,7 @@ document.head.appendChild(style);
 
         // ★★★ SHOP CREATION FUNCTIONS ★★★
 
-        // Show Create Shop Modal
+                // Show Create Shop Modal
         function showCreateShopModal() {
             document.getElementById('createShopModal').classList.add('active');
         }
@@ -910,8 +910,8 @@ document.head.appendChild(style);
             document.getElementById('createShopForm').reset();
         }
 
-        // Create Shop Account Function
-                async function createShopAccount() {
+        // Create Shop Account Function - FIXED WITH BETTER ERROR HANDLING
+        async function createShopAccount() {
             const shopData = {
                 name: document.getElementById('shopName').value.trim(),
                 email: document.getElementById('ownerEmail').value.trim(),
@@ -924,7 +924,7 @@ document.head.appendChild(style);
 
             // Validation
             if (!shopData.name || !shopData.email || !shopData.ownerName || !shopData.category || !shopData.phone || !shopData.address) {
-                alert("Please fill all required fields");
+                alert("❌ Please fill all required fields");
                 return;
             }
 
@@ -948,7 +948,7 @@ document.head.appendChild(style);
                     address: shopData.address,
                     description: shopData.description,
                     isActive: true,
-                    createdAt: new Date().toISOString(),
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     createdBy: currentAdmin.email
                 };
 
@@ -969,15 +969,19 @@ document.head.appendChild(style);
 
                 closeCreateShopModal();
                 
-                // Refresh shops list
-                loadShopsData();
-
+                // ✅ FIXED: Force refresh shops list with multiple attempts
+                setTimeout(() => {
+                    refreshShopsList();
+                }, 500);
+                
             } catch (error) {
                 console.error("Error creating shop:", error);
                 if (error.code === 'auth/email-already-in-use') {
-                    alert("Email already registered");
+                    alert("❌ Email already registered");
+                } else if (error.code === 'auth/invalid-email') {
+                    alert("❌ Invalid email address");
                 } else {
-                    alert("Error creating shop: " + error.message);
+                    alert("❌ Error creating shop: " + error.message);
                 }
             }
         }
@@ -992,58 +996,120 @@ document.head.appendChild(style);
             return password + '!1';
         }
 
-                // ✅ LOAD SHOPS DATA - FIXED
-async function loadShopsData() {
-    try {
-        const snapshot = await db.collection('shops').get();
-        const shopsList = document.getElementById('shopsList');
-        
-        if (!shopsList) {
-            console.error("shopsList element not found");
-            return;
+        // ✅ FIXED: LOAD SHOPS DATA WITH BETTER ERROR HANDLING
+        async function loadShopsData() {
+            try {
+                const snapshot = await db.collection('shops').get();
+                const shopsList = document.getElementById('shopsList');
+                
+                if (!shopsList) {
+                    console.error("❌ shopsList element not found - creating temporary");
+                    createTemporaryShopsContainer(snapshot);
+                    return;
+                }
+                
+                if (snapshot.empty) {
+                    shopsList.innerHTML = '<div class="empty-state">No shops registered yet</div>';
+                    return;
+                }
+                
+                let shopsHtml = '';
+                snapshot.forEach(doc => {
+                    const shop = { id: doc.id, ...doc.data() };
+                    shopsHtml += `
+                        <div class="shop-card">
+                            <div class="shop-header">
+                                <h3>${shop.name}</h3>
+                                <span class="status-badge ${shop.isActive ? 'active' : 'inactive'}">
+                                    ${shop.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                            </div>
+                            <div class="shop-details">
+                                <p><strong>Owner:</strong> ${shop.ownerName || shop.owner}</p>
+                                <p><strong>Email:</strong> ${shop.owner}</p>
+                                <p><strong>Category:</strong> ${shop.category}</p>
+                                <p><strong>Phone:</strong> ${shop.phone || 'Not provided'}</p>
+                                <p><strong>Address:</strong> ${shop.address}</p>
+                                ${shop.description ? `<p><strong>Description:</strong> ${shop.description}</p>` : ''}
+                            </div>
+                            <div class="shop-actions">
+                                <button class="btn-primary" onclick="editShop('${shop.id}')">Edit</button>
+                                <button class="btn-danger" onclick="deleteShop('${shop.id}')">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                shopsList.innerHTML = shopsHtml;
+                console.log(`✅ Loaded ${snapshot.size} shops successfully`);
+                
+            } catch (error) {
+                console.error("❌ Error loading shops:", error);
+                alert("Error loading shops: " + error.message);
+            }
         }
-        
-        if (snapshot.empty) {
-            shopsList.innerHTML = '<div class="empty-state">No shops registered yet</div>';
-            return;
-        }
-        
-        let shopsHtml = '';
-        snapshot.forEach(doc => {
-            const shop = { id: doc.id, ...doc.data() };
-            shopsHtml += `
-                <div class="shop-card">
-                    <div class="shop-header">
-                        <h3>${shop.name}</h3>
-                        <span class="status-badge ${shop.isActive ? 'active' : 'inactive'}">
-                            ${shop.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                    </div>
-                    <div class="shop-details">
-                        <p><strong>Owner:</strong> ${shop.ownerName || shop.owner}</p>
-                        <p><strong>Email:</strong> ${shop.owner}</p>
-                        <p><strong>Category:</strong> ${shop.category}</p>
-                        <p><strong>Phone:</strong> ${shop.phone || 'Not provided'}</p>
-                        <p><strong>Address:</strong> ${shop.address}</p>
-                        ${shop.description ? `<p><strong>Description:</strong> ${shop.description}</p>` : ''}
-                    </div>
-                    <div class="shop-actions">
-                        <button class="btn-primary" onclick="editShop('${shop.id}')">Edit</button>
-                        <button class="btn-danger" onclick="deleteShop('${shop.id}')">Delete</button>
-                    </div>
-                </div>
-            `;
-        });
-        
-        shopsList.innerHTML = shopsHtml;
-        showToast("Shops list updated", 'info');
-        
-    } catch (error) {
-        console.error("Error loading shops:", error);
-        showToast("Error loading shops", 'error');
-    }
-}
 
+        // ✅ NEW: REFRESH SHOPS LIST WITH MULTIPLE ATTEMPTS
+        async function refreshShopsList() {
+            console.log("🔄 Refreshing shops list...");
+            
+            // Try multiple times with delay
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                
+                const shopsList = document.getElementById('shopsList');
+                if (shopsList) {
+                    console.log(`✅ shopsList found on attempt ${attempt}`);
+                    await loadShopsData();
+                    return;
+                }
+                console.log(`⏳ shopsList not found, attempt ${attempt}/3`);
+            }
+            
+            console.log("❌ shopsList still not found after 3 attempts");
+            alert("✅ Shop created! Please refresh the shops page manually.");
+        }
+
+        // ✅ NEW: CREATE TEMPORARY SHOPS CONTAINER
+        function createTemporaryShopsContainer(snapshot) {
+            // Remove existing temporary container if any
+            const existingTemp = document.getElementById('tempShopsContainer');
+            if (existingTemp) existingTemp.remove();
+            
+            // Create new temporary container
+            const tempContainer = document.createElement('div');
+            tempContainer.id = 'tempShopsContainer';
+            tempContainer.style.cssText = `
+                padding: 20px;
+                margin: 20px;
+                border: 2px dashed #0F2C59;
+                border-radius: 10px;
+                background: #f8f9fa;
+            `;
+            
+            let html = '<h2 style="color: #0F2C59;">🏪 Shops List (Temporary View)</h2>';
+            
+            if (snapshot.empty) {
+                html += '<div class="empty-state">No shops registered yet</div>';
+            } else {
+                snapshot.forEach(doc => {
+                    const shop = doc.data();
+                    html += `
+                        <div style="border:1px solid #ddd; padding:15px; margin:10px; border-radius:8px; background:white;">
+                            <h3 style="margin:0; color: #0F2C59;">${shop.name}</h3>
+                            <p style="margin:5px 0;"><strong>Owner:</strong> ${shop.ownerName || shop.owner}</p>
+                            <p style="margin:5px 0;"><strong>Email:</strong> ${shop.owner}</p>
+                            <p style="margin:5px 0;"><strong>Category:</strong> ${shop.category}</p>
+                            <p style="margin:5px 0;"><strong>Phone:</strong> ${shop.phone || 'Not provided'}</p>
+                        </div>
+                    `;
+                });
+            }
+            
+            tempContainer.innerHTML = html;
+            document.body.appendChild(tempContainer);
+            console.log("✅ Created temporary shops container");
+        }
         // Navigation
         function navigateToPage(page) {
             // Hide all pages
