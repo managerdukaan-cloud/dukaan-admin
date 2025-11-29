@@ -890,7 +890,16 @@
                 };
 
                 await db.collection('shops').doc(userId).set(shopDoc);
-
+                                // FIXED: Also save to users collection for monitoring
+                await db.collection('users').doc(userId).set({
+                    email: shopData.email,
+                    name: shopData.ownerName,
+                    role: 'shopkeeper',
+                    shopId: userId,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    createdBy: currentAdmin.email
+                });
+                
                 // 3. Show success with credentials
                 showToast("Shop account created successfully!", 'success');
                 
@@ -924,9 +933,51 @@
             return password + '!1';
         }
 
-        // Load Shops Data
-        function loadShopsData() {
-            showToast("Shops list updated", 'info');
+                // Load Shops Data - FIXED: Real-time from Firebase
+        async function loadShopsData() {
+            try {
+                const snapshot = await db.collection('shops').get();
+                const shopsList = document.getElementById('shopsList');
+                
+                if (snapshot.empty) {
+                    shopsList.innerHTML = '<div class="empty-state">No shops registered yet</div>';
+                    return;
+                }
+                
+                let shopsHtml = '';
+                snapshot.forEach(doc => {
+                    const shop = { id: doc.id, ...doc.data() };
+                    shopsHtml += `
+                        <div class="shop-card">
+                            <div class="shop-header">
+                                <h3>${shop.name}</h3>
+                                <span class="status-badge ${shop.isActive ? 'active' : 'inactive'}">
+                                    ${shop.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                            </div>
+                            <div class="shop-details">
+                                <p><strong>Owner:</strong> ${shop.ownerName}</p>
+                                <p><strong>Email:</strong> ${shop.owner}</p>
+                                <p><strong>Category:</strong> ${shop.category}</p>
+                                <p><strong>Phone:</strong> ${shop.phone}</p>
+                                <p><strong>Address:</strong> ${shop.address}</p>
+                                ${shop.description ? `<p><strong>Description:</strong> ${shop.description}</p>` : ''}
+                            </div>
+                            <div class="shop-actions">
+                                <button class="btn-primary" onclick="editShop('${shop.id}')">Edit</button>
+                                <button class="btn-danger" onclick="deleteShop('${shop.id}')">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                shopsList.innerHTML = shopsHtml;
+                showToast("Shops list updated", 'info');
+                
+            } catch (error) {
+                console.error("Error loading shops:", error);
+                showToast("Error loading shops", 'error');
+            }
         }
 
         // Navigation
