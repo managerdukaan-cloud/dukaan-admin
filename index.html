@@ -1034,37 +1034,143 @@
             document.getElementById('sidebarRevenue').textContent = `₹0`;
         }
 
-        function loadDashboardData() {
-            // Load recent activity
-            document.getElementById('recentActivity').innerHTML = `
-                <div style="text-align: center; padding: 40px; color: var(--text-light);">
-                    <i class="fas fa-inbox" style="font-size: 50px; margin-bottom: 15px;"></i>
-                    <h4 style="color: var(--text-light); margin-bottom: 10px;">No Activity Yet</h4>
-                    <p>Activity will appear here as your platform grows</p>
-                </div>
-            `;
+                async function loadDashboardData() {
+            try {
+                // FIXED: Load real-time platform statistics
+                const [shopsSnapshot, ordersSnapshot, usersSnapshot, productsSnapshot] = await Promise.all([
+                    db.collection('shops').get(),
+                    db.collection('orders').get(),
+                    db.collection('users').get(),
+                    db.collection('products').get()
+                ]);
+
+                // Update statistics cards
+                document.getElementById('totalShops').textContent = shopsSnapshot.size;
+                document.getElementById('totalOrders').textContent = ordersSnapshot.size;
+                document.getElementById('totalUsers').textContent = usersSnapshot.size;
+                document.getElementById('totalProducts').textContent = productsSnapshot.size;
+
+                // Calculate total revenue
+                let totalRevenue = 0;
+                ordersSnapshot.forEach(doc => {
+                    const order = doc.data();
+                    totalRevenue += order.total || 0;
+                });
+                document.getElementById('totalRevenue').textContent = `₹${totalRevenue}`;
+
+                // Load recent activity
+                const recentOrders = [];
+                ordersSnapshot.forEach(doc => {
+                    recentOrders.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Sort by date and take latest 5
+                recentOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                const latestOrders = recentOrders.slice(0, 5);
+
+                if (latestOrders.length === 0) {
+                    document.getElementById('recentActivity').innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: var(--text-light);">
+                            <i class="fas fa-inbox" style="font-size: 50px; margin-bottom: 15px;"></i>
+                            <h4 style="color: var(--text-light); margin-bottom: 10px;">No Activity Yet</h4>
+                            <p>Activity will appear here as your platform grows</p>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('recentActivity').innerHTML = latestOrders.map(order => `
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i class="fas fa-shopping-bag"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">New Order #${order.orderId || order.id.slice(-6)}</div>
+                                <div class="activity-desc">₹${order.total} • ${order.customerEmail}</div>
+                                <div class="activity-time">${formatTimeAgo(order.createdAt)}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // FIXED: Setup real-time listeners
+                setupDashboardRealTimeListeners();
+
+            } catch (error) {
+                console.error("Error loading dashboard:", error);
+                showToast("Error loading dashboard data", 'error');
+            }
         }
 
-        // Utility Functions
-        function showToast(message, type = 'success') {
-            const toastContainer = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `
-                <div class="toast-icon" style="color: ${type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--danger)' : type === 'warning' ? 'var(--warning)' : 'var(--admin-primary)'}">
-                    <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i>
-                </div>
-                <div class="toast-message">${message}</div>
-            `;
-            
-            toastContainer.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.remove();
-            }, 5000);
+        // FIXED: Real-time dashboard updates
+        function setupDashboardRealTimeListeners() {
+            // Real-time shops count
+            db.collection('shops').onSnapshot((snapshot) => {
+                document.getElementById('totalShops').textContent = snapshot.size;
+            });
+
+            // Real-time orders count and revenue
+            db.collection('orders').onSnapshot((snapshot) => {
+                document.getElementById('totalOrders').textContent = snapshot.size;
+                
+                let totalRevenue = 0;
+                snapshot.forEach(doc => {
+                    const order = doc.data();
+                    totalRevenue += order.total || 0;
+                });
+                document.getElementById('totalRevenue').textContent = `₹${totalRevenue}`;
+
+                // Update recent activity with new orders
+                const recentOrders = [];
+                snapshot.forEach(doc => {
+                    recentOrders.push({ id: doc.id, ...doc.data() });
+                });
+                recentOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                const latestOrders = recentOrders.slice(0, 5);
+
+                if (latestOrders.length > 0) {
+                    document.getElementById('recentActivity').innerHTML = latestOrders.map(order => `
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i class="fas fa-shopping-bag"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">New Order #${order.orderId || order.id.slice(-6)}</div>
+                                <div class="activity-desc">₹${order.total} • ${order.customerEmail}</div>
+                                <div class="activity-time">${formatTimeAgo(order.createdAt)}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            });
+
+            // Real-time users count
+            db.collection('users').onSnapshot((snapshot) => {
+                document.getElementById('totalUsers').textContent = snapshot.size;
+            });
+
+            // Real-time products count
+            db.collection('products').onSnapshot((snapshot) => {
+                document.getElementById('totalProducts').textContent = snapshot.size;
+            });
         }
 
-        function showNotifications() {
+        // Utility function for time formatting
+        function formatTimeAgo(timestamp) {
+            if (!timestamp) return 'Just now';
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays < 7) return `${diffDays}d ago`;
+            return date.toLocaleDateString();
+        }
+
+                function showNotifications() {
             showToast('Notifications feature coming soon!', 'info');
         }
 
