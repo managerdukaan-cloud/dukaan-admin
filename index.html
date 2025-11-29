@@ -996,58 +996,82 @@ document.head.appendChild(style);
             return password + '!1';
         }
 
-        // ✅ FIXED: LOAD SHOPS DATA WITH BETTER ERROR HANDLING
+// ✅ SIMPLE & CLEAN - LOAD SHOPS DATA
 async function loadShopsData() {
     try {
         const snapshot = await db.collection('shops').get();
-        const shopsTable = document.getElementById('shopsTable'); // ✅ CHANGE HERE
+        const shopsTable = document.getElementById('shopsTable');
         
         if (!shopsTable) {
-            console.error("❌ shopsTable element not found");
+            console.log("Shops table not ready yet");
             return;
         }
-                
-                if (snapshot.empty) {
-                    shopsList.innerHTML = '<div class="empty-state">No shops registered yet</div>';
-                    return;
-                }
-                
-                let shopsHtml = '';
-                snapshot.forEach(doc => {
-                    const shop = { id: doc.id, ...doc.data() };
-                    shopsHtml += `
-                        <div class="shop-card">
-                            <div class="shop-header">
-                                <h3>${shop.name}</h3>
-                                <span class="status-badge ${shop.isActive ? 'active' : 'inactive'}">
-                                    ${shop.isActive ? 'Active' : 'Inactive'}
-                                </span>
+        
+        if (snapshot.empty) {
+            shopsTable.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 60px 20px;">
+                        <i class="fas fa-store-slash" style="font-size: 60px; color: var(--text-light); margin-bottom: 15px;"></i>
+                        <h4 style="color: var(--text-light); margin-bottom: 10px;">No Shops Yet</h4>
+                        <p style="color: var(--text-light); margin-bottom: 20px;">Create your first shop to get started</p>
+                        <button class="btn-admin" onclick="showCreateShopModal()">
+                            <i class="fas fa-plus"></i> Create Your First Shop
+                        </button>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        let tableHtml = '';
+        snapshot.forEach(doc => {
+            const shop = { id: doc.id, ...doc.data() };
+            const joinDate = shop.createdAt ? new Date(shop.createdAt).toLocaleDateString() : 'Recently';
+            
+            tableHtml += `
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 40px; height: 40px; background: #0F2C59; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                                <i class="fas fa-store"></i>
                             </div>
-                            <div class="shop-details">
-                                <p><strong>Owner:</strong> ${shop.ownerName || shop.owner}</p>
-                                <p><strong>Email:</strong> ${shop.owner}</p>
-                                <p><strong>Category:</strong> ${shop.category}</p>
-                                <p><strong>Phone:</strong> ${shop.phone || 'Not provided'}</p>
-                                <p><strong>Address:</strong> ${shop.address}</p>
-                                ${shop.description ? `<p><strong>Description:</strong> ${shop.description}</p>` : ''}
-                            </div>
-                            <div class="shop-actions">
-                                <button class="btn-primary" onclick="editShop('${shop.id}')">Edit</button>
-                                <button class="btn-danger" onclick="deleteShop('${shop.id}')">Delete</button>
+                            <div>
+                                <strong>${shop.name}</strong>
+                                <div style="font-size: 12px; color: var(--text-light);">${shop.owner}</div>
                             </div>
                         </div>
-                    `;
-                });
-                
-                shopsList.innerHTML = shopsHtml;
-                console.log(`✅ Loaded ${snapshot.size} shops successfully`);
-                
-            } catch (error) {
-                console.error("❌ Error loading shops:", error);
-                alert("Error loading shops: " + error.message);
-            }
-        }
-
+                    </td>
+                    <td>${shop.ownerName || shop.owner}</td>
+                    <td>
+                        <span class="category-badge">${shop.category}</span>
+                    </td>
+                    <td>
+                        <span class="status-badge active">Active</span>
+                    </td>
+                    <td>0</td>
+                    <td>₹0</td>
+                    <td>${joinDate}</td>
+                    <td>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn-action" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-action btn-danger" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        shopsTable.innerHTML = tableHtml;
+        console.log(`✅ Loaded ${snapshot.size} shops`);
+        
+    } catch (error) {
+        console.error("Error loading shops:", error);
+    }
+}
         // ✅ NEW: REFRESH SHOPS LIST WITH MULTIPLE ATTEMPTS
 async function refreshShopsList() {
     console.log("🔄 Refreshing shops list...");
