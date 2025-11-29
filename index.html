@@ -852,7 +852,7 @@
         }
 
         // Create Shop Account Function
-        async function createShopAccount() {
+                async function createShopAccount() {
             const shopData = {
                 name: document.getElementById('shopName').value.trim(),
                 email: document.getElementById('ownerEmail').value.trim(),
@@ -865,12 +865,12 @@
 
             // Validation
             if (!shopData.name || !shopData.email || !shopData.ownerName || !shopData.category || !shopData.phone || !shopData.address) {
-                showToast("Please fill all required fields", 'error');
+                alert("Please fill all required fields");
                 return;
             }
 
             try {
-                showToast("Creating shop account...", 'info');
+                console.log("Creating shop account...");
 
                 // Generate temporary password
                 const tempPassword = generateTempPassword();
@@ -894,7 +894,8 @@
                 };
 
                 await db.collection('shops').doc(userId).set(shopDoc);
-                                // FIXED: Also save to users collection for monitoring
+
+                // 3. Also save to users collection for monitoring
                 await db.collection('users').doc(userId).set({
                     email: shopData.email,
                     name: shopData.ownerName,
@@ -903,14 +904,9 @@
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     createdBy: currentAdmin.email
                 });
-                
-                // 3. Show success with credentials
-                showToast("Shop account created successfully!", 'success');
-                
-                // Show credentials to admin
-                setTimeout(() => {
-                    alert(`🎉 SHOP ACCOUNT CREATED!\n\n📧 Email: ${shopData.email}\n🔑 Temporary Password: ${tempPassword}\n\n⚠️ Please share these credentials with the shop owner securely.`);
-                }, 1000);
+
+                // 4. Show success with credentials
+                alert(`🎉 SHOP ACCOUNT CREATED!\n\n📧 Email: ${shopData.email}\n🔑 Temporary Password: ${tempPassword}\n\n⚠️ Please share these credentials with the shop owner securely.`);
 
                 closeCreateShopModal();
                 
@@ -920,9 +916,9 @@
             } catch (error) {
                 console.error("Error creating shop:", error);
                 if (error.code === 'auth/email-already-in-use') {
-                    showToast("Email already registered", 'error');
+                    alert("Email already registered");
                 } else {
-                    showToast("Error creating shop: " + error.message, 'error');
+                    alert("Error creating shop: " + error.message);
                 }
             }
         }
