@@ -14,8 +14,8 @@
             --primary: #0F2C59; --primary-dark: #0A1F3D; --secondary: #FFFFFF; --accent: #3A8EF6; 
             --accent-hover: #2D7AE6; --success: #10B981; --warning: #F59E0B; --danger: #EF4444;
             --neutral: #F8FAFC; --text-dark: #1E293B; --text-light: #64748B; --border: #E2E8F0;
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08); --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12);
             --admin-primary: #7C3AED; --admin-accent: #8B5CF6;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08); --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12);
         }
         
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -98,6 +98,7 @@
             background: none; 
             text-align: left; 
             width: 100%; 
+            cursor: pointer;
         }
         .nav-item:hover { background: var(--neutral); }
         .nav-item.active { 
@@ -198,17 +199,32 @@
             background: var(--admin-primary); 
             color: white; 
             border: none; 
-            padding: 8px 16px; 
-            border-radius: 8px; 
+            padding: 12px 24px; 
+            border-radius: 10px; 
             font-weight: 600; 
             cursor: pointer; 
             transition: all 0.3s ease; 
+            font-size: 14px;
         }
         .btn-admin:hover { 
             background: #6D28D9; 
             transform: translateY(-2px); 
         }
-        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn-outline { 
+            background: transparent; 
+            color: var(--admin-primary); 
+            border: 2px solid var(--admin-primary); 
+            padding: 10px 20px; 
+            border-radius: 10px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+        }
+        .btn-outline:hover { 
+            background: var(--admin-primary); 
+            color: white; 
+        }
+        .btn-sm { padding: 8px 16px; font-size: 12px; }
         
         /* Auth Styles */
         .auth-container { 
@@ -271,6 +287,77 @@
             box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1); 
         }
         
+        /* Modal Styles */
+        .modal-overlay { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: rgba(0, 0, 0, 0.5); 
+            z-index: 1000; 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 20px; 
+        }
+        .modal-overlay.active { 
+            display: flex; 
+        }
+        .modal-content { 
+            background: white; 
+            border-radius: 20px; 
+            padding: 30px; 
+            width: 100%; 
+            max-width: 600px; 
+            max-height: 90vh; 
+            overflow-y: auto; 
+            box-shadow: var(--shadow-lg); 
+        }
+        .modal-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 20px; 
+            padding-bottom: 15px; 
+            border-bottom: 1px solid var(--border); 
+        }
+        .modal-title { 
+            font-size: 1.5rem; 
+            font-weight: 700; 
+            color: var(--text-dark); 
+        }
+        .modal-close { 
+            background: none; 
+            border: none; 
+            font-size: 24px; 
+            color: var(--text-light); 
+            cursor: pointer; 
+        }
+        .modal-body { 
+            margin-bottom: 20px; 
+        }
+        .modal-footer { 
+            display: flex; 
+            gap: 12px; 
+            justify-content: flex-end; 
+            padding-top: 20px; 
+            border-top: 1px solid var(--border); 
+        }
+        
+        /* Alert Styles */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        .alert-info {
+            background: #E0F2FE;
+            color: #0369A1;
+            border: 1px solid #BAE6FD;
+        }
+        
         /* Toast Styles */
         .toast-container { 
             position: fixed; 
@@ -320,6 +407,8 @@
             .stats-grid { grid-template-columns: 1fr 1fr; }
             .admin-table { font-size: 14px; }
             .admin-table th, .admin-table td { padding: 8px 12px; }
+            .modal-content { padding: 20px; }
+            .modal-footer { flex-direction: column; }
         }
     </style>
 </head>
@@ -344,19 +433,7 @@
                         <input type="password" class="form-control" id="loginPassword" placeholder="Enter admin password" required>
                     </div>
                     <button type="submit" class="btn-admin w-100" style="padding: 12px;">Sign In as Admin</button>
-                    
-                    <!-- Demo Access -->
-                    <div style="margin-top: 20px; padding: 15px; background: #f0f9ff; border-radius: 10px; border: 1px solid #e0f2fe;">
-                        <h6 style="color: var(--admin-primary); margin-bottom: 10px;"><i class="fas fa-rocket"></i> Demo Access</h6>
-                        <button type="button" class="btn-admin w-100" style="background: var(--warning);" onclick="demoLogin()">
-                            <i class="fas fa-bolt"></i> Use Demo Admin Account
-                        </button>
-                    </div>
                 </form>
-                
-                <div class="auth-footer" style="text-align: center; margin-top: 25px; color: var(--text-light);">
-                    <p>Regular users? <a href="#" style="color: var(--admin-primary);">Go to Customer App</a> | <a href="#" style="color: var(--admin-primary);">Shopkeeper Portal</a></p>
-                </div>
             </div>
         </div>
     </div>
@@ -373,7 +450,7 @@
                     <span id="adminNameDisplay">Super Admin</span>
                     <div style="display: flex; gap: 10px;">
                         <button class="btn-admin btn-sm" onclick="showNotifications()">
-                            <i class="fas fa-bell"></i> <span id="notificationCount">3</span>
+                            <i class="fas fa-bell"></i> <span id="notificationCount">0</span>
                         </button>
                         <button class="btn-admin btn-sm" onclick="logout()">
                             <i class="fas fa-sign-out-alt"></i> Logout
@@ -405,33 +482,30 @@
                     <button class="nav-item" data-page="analytics">
                         <i class="fas fa-chart-bar"></i> Analytics
                     </button>
-                    <button class="nav-item" data-page="commissions">
-                        <i class="fas fa-money-bill-wave"></i> Commissions
-                    </button>
                     <button class="nav-item" data-page="settings">
                         <i class="fas fa-cog"></i> System Settings
                     </button>
                 </div>
                 
                 <!-- Platform Stats -->
-                    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border);">
-        <h6 style="font-weight: 600; margin-bottom: 15px; color: var(--text-dark);">Platform Overview</h6>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-            <div style="display: flex; justify-content: space-between;">
-                <span style="color: var(--text-light); font-size: 14px;">Active Shops:</span>
-                <span style="font-weight: 600;" id="sidebarShops">0</span>
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border);">
+                    <h6 style="font-weight: 600; margin-bottom: 15px; color: var(--text-dark);">Platform Overview</h6>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-light); font-size: 14px;">Active Shops:</span>
+                            <span style="font-weight: 600;" id="sidebarShops">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-light); font-size: 14px;">Total Users:</span>
+                            <span style="font-weight: 600;" id="sidebarUsers">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-light); font-size: 14px;">Today's Revenue:</span>
+                            <span style="font-weight: 600;" id="sidebarRevenue">₹0</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div style="display: flex; justify-content: space-between;">
-                <span style="color: var(--text-light); font-size: 14px;">Total Users:</span>
-                <span style="font-weight: 600;" id="sidebarUsers">0</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-                <span style="color: var(--text-light); font-size: 14px;">Today's Revenue:</span>
-                <span style="font-weight: 600;" id="sidebarRevenue">₹0</span>
-            </div>
-        </div>
-    </div>
-</div>
 
             <!-- Main Content Area -->
             <div class="admin-main">
@@ -443,28 +517,28 @@
                     </h2>
                     
                     <!-- Key Metrics -->
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-value" id="totalRevenue">₹0</div>
-        <div class="stat-label">Total Revenue</div>
-        <div class="stat-change">Ready for business</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" id="totalOrders">0</div>
-        <div class="stat-label">Total Orders</div>
-        <div class="stat-change">Waiting for first order</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" id="activeShops">0</div>
-        <div class="stat-label">Active Shops</div>
-        <div class="stat-change">No shops yet</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" id="totalUsers">0</div>
-        <div class="stat-label">Registered Users</div>
-        <div class="stat-change">Ready for signups</div>
-    </div>
-</div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalRevenue">₹0</div>
+                            <div class="stat-label">Total Revenue</div>
+                            <div class="stat-change">Ready for business</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalOrders">0</div>
+                            <div class="stat-label">Total Orders</div>
+                            <div class="stat-change">Waiting for first order</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="activeShops">0</div>
+                            <div class="stat-label">Active Shops</div>
+                            <div class="stat-change">No shops yet</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalUsers">0</div>
+                            <div class="stat-label">Registered Users</div>
+                            <div class="stat-change">Ready for signups</div>
+                        </div>
+                    </div>
                     
                     <div class="row">
                         <div class="col-md-8">
@@ -475,18 +549,11 @@
                                     Recent Activity
                                 </h3>
                                 <div id="recentActivity">
-                                    <div class="loading-spinner"></div>
-                                </div>
-                            </div>
-                            
-                            <!-- Pending Approvals -->
-                            <div class="admin-card">
-                                <h3 class="section-title">
-                                    <i class="fas fa-hourglass-half"></i>
-                                    Pending Approvals
-                                </h3>
-                                <div id="pendingApprovals">
-                                    <div class="loading-spinner"></div>
+                                    <div style="text-align: center; padding: 40px; color: var(--text-light);">
+                                        <i class="fas fa-inbox" style="font-size: 50px; margin-bottom: 15px;"></i>
+                                        <h4 style="color: var(--text-light); margin-bottom: 10px;">No Activity Yet</h4>
+                                        <p>Activity will appear here as your platform grows</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -505,11 +572,8 @@
                                     <button class="btn-admin" onclick="navigateToPage('products')">
                                         <i class="fas fa-box"></i> Moderate Products
                                     </button>
-                                    <button class="btn-admin" onclick="navigateToPage('commissions')">
-                                        <i class="fas fa-chart-line"></i> View Revenue
-                                    </button>
-                                    <button class="btn-admin" onclick="navigateToPage('settings')">
-                                        <i class="fas fa-cog"></i> System Settings
+                                    <button class="btn-admin" onclick="navigateToPage('analytics')">
+                                        <i class="fas fa-chart-line"></i> View Analytics
                                     </button>
                                 </div>
                             </div>
@@ -533,10 +597,6 @@
                                         <span>Payment Gateway</span>
                                         <span class="status-badge status-active">Active</span>
                                     </div>
-                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <span>Last Backup</span>
-                                        <span style="font-size: 12px; color: var(--text-light);">2 hours ago</span>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -544,130 +604,130 @@
                 </div>
 
                 <!-- Shops Management Page -->
-<div id="shopsPage" class="content-page">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 class="section-title">
-            <i class="fas fa-store"></i>
-            Shops Management
-        </h2>
-        <button class="btn-admin" onclick="showCreateShopModal()">
-            <i class="fas fa-plus"></i> Create New Shop
-        </button>
-    </div>
-    
-    <div class="admin-card">
-        <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
-            <div style="display: flex; gap: 10px;">
-                <button class="btn-admin btn-sm active">All Shops (0)</button>
-                <button class="btn-admin btn-sm">Pending (0)</button>
-                <button class="btn-admin btn-sm">Active (0)</button>
-                <button class="btn-admin btn-sm">Suspended (0)</button>
-            </div>
-            <div style="position: relative;">
-                <input type="text" class="form-control" placeholder="Search shops..." style="padding-left: 40px; width: 300px;">
-                <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-light);"></i>
-            </div>
-        </div>
-        
-        <div class="table-responsive">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Shop Name</th>
-                        <th>Owner</th>
-                        <th>Category</th>
-                        <th>Status</th>
-                        <th>Products</th>
-                        <th>Revenue</th>
-                        <th>Joined</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="shopsTable">
-                    <tr>
-                        <td colspan="8" style="text-align: center; padding: 60px 20px;">
-                            <i class="fas fa-store-slash" style="font-size: 60px; color: var(--text-light); margin-bottom: 15px;"></i>
-                            <h4 style="color: var(--text-light); margin-bottom: 10px;">No Shops Yet</h4>
-                            <p style="color: var(--text-light); margin-bottom: 20px;">Create your first shop to get started</p>
-                            <button class="btn-admin" onclick="showCreateShopModal()">
-                                <i class="fas fa-plus"></i> Create Your First Shop
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+                <div id="shopsPage" class="content-page">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 class="section-title">
+                            <i class="fas fa-store"></i>
+                            Shops Management
+                        </h2>
+                        <button class="btn-admin" onclick="showCreateShopModal()">
+                            <i class="fas fa-plus"></i> Create New Shop
+                        </button>
+                    </div>
+                    
+                    <div class="admin-card">
+                        <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn-admin btn-sm active">All Shops (0)</button>
+                                <button class="btn-admin btn-sm">Pending (0)</button>
+                                <button class="btn-admin btn-sm">Active (0)</button>
+                                <button class="btn-admin btn-sm">Suspended (0)</button>
+                            </div>
+                            <div style="position: relative;">
+                                <input type="text" class="form-control" placeholder="Search shops..." style="padding-left: 40px; width: 300px;">
+                                <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-light);"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Shop Name</th>
+                                        <th>Owner</th>
+                                        <th>Category</th>
+                                        <th>Status</th>
+                                        <th>Products</th>
+                                        <th>Revenue</th>
+                                        <th>Joined</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="shopsTable">
+                                    <tr>
+                                        <td colspan="8" style="text-align: center; padding: 60px 20px;">
+                                            <i class="fas fa-store-slash" style="font-size: 60px; color: var(--text-light); margin-bottom: 15px;"></i>
+                                            <h4 style="color: var(--text-light); margin-bottom: 10px;">No Shops Yet</h4>
+                                            <p style="color: var(--text-light); margin-bottom: 20px;">Create your first shop to get started</p>
+                                            <button class="btn-admin" onclick="showCreateShopModal()">
+                                                <i class="fas fa-plus"></i> Create Your First Shop
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
 
-                <!-- Additional pages would continue here... -->
+                <!-- Other pages would continue here... -->
                 
             </div>
         </div>
     </div>
 
     <!-- Create Shop Modal -->
-<div class="modal-overlay" id="createShopModal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title">Create New Shop</h3>
-            <button class="modal-close" onclick="closeCreateShopModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <form id="createShopForm">
-                <div class="form-group">
-                    <label class="form-label">Shop Name *</label>
-                    <input type="text" class="form-control" id="shopName" placeholder="Enter shop name" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Owner Email *</label>
-                    <input type="email" class="form-control" id="ownerEmail" placeholder="Enter owner email" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Owner Name *</label>
-                    <input type="text" class="form-control" id="ownerName" placeholder="Enter owner full name" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Category *</label>
-                    <select class="form-control" id="shopCategory" required>
-                        <option value="">Select Category</option>
-                        <option value="groceries">Groceries</option>
-                        <option value="cosmetics">Cosmetics</option>
-                        <option value="clothing">Clothing</option>
-                        <option value="vegetables">Vegetables</option>
-                        <option value="electronics">Electronics</option>
-                        <option value="bakery">Bakery</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Phone Number *</label>
-                    <input type="tel" class="form-control" id="shopPhone" placeholder="Enter phone number" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Address *</label>
-                    <textarea class="form-control" id="shopAddress" placeholder="Enter shop address" rows="2" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Description</label>
-                    <textarea class="form-control" id="shopDescription" placeholder="Shop description" rows="2"></textarea>
-                </div>
-                <div class="alert alert-info">
-                    <small><i class="fas fa-info-circle"></i> Login credentials will be sent to the owner's email</small>
-                </div>
-            </form>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn-outline" onclick="closeCreateShopModal()">Cancel</button>
-            <button type="button" class="btn-primary" onclick="createShopAccount()">Create Shop Account</button>
+    <div class="modal-overlay" id="createShopModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Shop</h3>
+                <button class="modal-close" onclick="closeCreateShopModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createShopForm">
+                    <div class="form-group">
+                        <label class="form-label">Shop Name *</label>
+                        <input type="text" class="form-control" id="shopName" placeholder="Enter shop name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Owner Email *</label>
+                        <input type="email" class="form-control" id="ownerEmail" placeholder="Enter owner email" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Owner Name *</label>
+                        <input type="text" class="form-control" id="ownerName" placeholder="Enter owner full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Category *</label>
+                        <select class="form-control" id="shopCategory" required>
+                            <option value="">Select Category</option>
+                            <option value="groceries">Groceries</option>
+                            <option value="cosmetics">Cosmetics</option>
+                            <option value="clothing">Clothing</option>
+                            <option value="vegetables">Vegetables</option>
+                            <option value="electronics">Electronics</option>
+                            <option value="bakery">Bakery</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number *</label>
+                        <input type="tel" class="form-control" id="shopPhone" placeholder="Enter phone number" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Address *</label>
+                        <textarea class="form-control" id="shopAddress" placeholder="Enter shop address" rows="2" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="shopDescription" placeholder="Shop description" rows="2"></textarea>
+                    </div>
+                    <div class="alert alert-info">
+                        <small><i class="fas fa-info-circle"></i> Login credentials will be sent to the owner's email</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-outline" onclick="closeCreateShopModal()">Cancel</button>
+                <button type="button" class="btn-admin" onclick="createShopAccount()">Create Shop Account</button>
+            </div>
         </div>
     </div>
-</div>
 
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
-        // Firebase Configuration (Same as shopkeeper app)
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyD2-yz4xwYD5S_oXs6ryhNP8XIC94jzda4",
             authDomain: "dukaan-platform.firebaseapp.com",
@@ -718,40 +778,47 @@
 
         // Admin Authentication
         async function handleAdminLogin(event) {
-    event.preventDefault();
-    
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
+            event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
 
-    // DEMO ADMINS (Yeh already kaam karenge)
-    const demoAdmins = [
-        { email: 'admin@dukaan.com', password: 'admin123' },
-        { email: 'superadmin@dukaan.com', password: 'super123' },
-        { email: 'admin@company.com', password: 'admin123' }
-    ];
-    
-    const isDemoAdmin = demoAdmins.some(admin => 
-        admin.email === email && admin.password === password
-    );
-    
-    if (isDemoAdmin) {
-        currentAdmin = { 
-            uid: 'demo-admin-' + Date.now(), 
-            email: email,
-            displayName: 'Admin User',
-            isAdmin: true
-        };
-        showAdminScreen();
-        showToast('Admin Login Successful! 👋', 'success');
-    } else {
-        showToast('Use: admin@dukaan.com / admin123', 'error');
-    }
-}
+            // Validate inputs
+            if (!email || !password) {
+                showToast('Please enter both email and password', 'error');
+                return;
+            }
 
-        function demoLogin() {
-            document.getElementById('loginEmail').value = 'admin@dukaan.com';
-            document.getElementById('loginPassword').value = 'admin123';
-            showToast('Demo admin credentials filled! Click Sign In to continue.', 'info');
+            try {
+                showToast('Authenticating admin...', 'info');
+                
+                // Demo Admin for testing
+                const demoAdmins = [
+                    { email: 'admin@dukaan.com', password: 'admin123' },
+                    { email: 'superadmin@dukaan.com', password: 'super123' }
+                ];
+                
+                const isDemoAdmin = demoAdmins.some(admin => 
+                    admin.email === email && admin.password === password
+                );
+                
+                if (isDemoAdmin) {
+                    currentAdmin = { 
+                        uid: 'demo-admin-' + Date.now(), 
+                        email: email,
+                        displayName: 'Admin User',
+                        isAdmin: true
+                    };
+                    showAdminScreen();
+                    showToast('Welcome to Admin Panel!', 'success');
+                } else {
+                    showToast('Invalid admin credentials', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Admin login error:', error);
+                showToast('Login failed: ' + error.message, 'error');
+            }
         }
 
         function showAdminScreen() {
@@ -769,100 +836,98 @@
 
         // ★★★ SHOP CREATION FUNCTIONS ★★★
 
-// Show Create Shop Modal
-function showCreateShopModal() {
-    document.getElementById('createShopModal').classList.add('active');
-}
-
-// Close Create Shop Modal
-function closeCreateShopModal() {
-    document.getElementById('createShopModal').classList.remove('active');
-    document.getElementById('createShopForm').reset();
-}
-
-// Create Shop Account Function
-async function createShopAccount() {
-    const shopData = {
-        name: document.getElementById('shopName').value.trim(),
-        email: document.getElementById('ownerEmail').value.trim(),
-        ownerName: document.getElementById('ownerName').value.trim(),
-        category: document.getElementById('shopCategory').value,
-        phone: document.getElementById('shopPhone').value.trim(),
-        address: document.getElementById('shopAddress').value.trim(),
-        description: document.getElementById('shopDescription').value.trim()
-    };
-
-    // Validation
-    if (!shopData.name || !shopData.email || !shopData.ownerName || !shopData.category || !shopData.phone || !shopData.address) {
-        showToast("Please fill all required fields", 'error');
-        return;
-    }
-
-    try {
-        showToast("Creating shop account...", 'info');
-
-        // Generate temporary password
-        const tempPassword = generateTempPassword();
-        
-        // 1. Create Firebase Auth User
-        const userCredential = await auth.createUserWithEmailAndPassword(shopData.email, tempPassword);
-        const userId = userCredential.user.uid;
-
-        // 2. Create Shop Document in Firestore
-        const shopDoc = {
-            name: shopData.name,
-            owner: shopData.email,
-            ownerName: shopData.ownerName,
-            category: shopData.category,
-            phone: shopData.phone,
-            address: shopData.address,
-            description: shopData.description,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            createdBy: currentAdmin.email
-        };
-
-        await db.collection('shops').doc(userId).set(shopDoc);
-
-        // 3. Show success with credentials
-        showToast("Shop account created successfully!", 'success');
-        
-        // Show credentials to admin
-        setTimeout(() => {
-            alert(`🎉 SHOP ACCOUNT CREATED!\n\n📧 Email: ${shopData.email}\n🔑 Temporary Password: ${tempPassword}\n\n⚠️ Please share these credentials with the shop owner securely.`);
-        }, 1000);
-
-        closeCreateShopModal();
-        
-        // Refresh shops list
-        loadShopsData();
-
-    } catch (error) {
-        console.error("Error creating shop:", error);
-        if (error.code === 'auth/email-already-in-use') {
-            showToast("Email already registered", 'error');
-        } else {
-            showToast("Error creating shop: " + error.message, 'error');
+        // Show Create Shop Modal
+        function showCreateShopModal() {
+            document.getElementById('createShopModal').classList.add('active');
         }
-    }
-}
 
-// Generate Temporary Password
-function generateTempPassword() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let password = '';
-    for (let i = 0; i < 8; i++) {
-        password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return password + '!1'; // Add special chars for password requirements
-}
+        // Close Create Shop Modal
+        function closeCreateShopModal() {
+            document.getElementById('createShopModal').classList.remove('active');
+            document.getElementById('createShopForm').reset();
+        }
 
-// Load Shops Data (Update this function if it exists)
-function loadShopsData() {
-    // This will refresh the shops table
-    showToast("Shops list updated", 'info');
-}
-// ★★★ SHOP CREATION FUNCTIONS ADDED ★★★
+        // Create Shop Account Function
+        async function createShopAccount() {
+            const shopData = {
+                name: document.getElementById('shopName').value.trim(),
+                email: document.getElementById('ownerEmail').value.trim(),
+                ownerName: document.getElementById('ownerName').value.trim(),
+                category: document.getElementById('shopCategory').value,
+                phone: document.getElementById('shopPhone').value.trim(),
+                address: document.getElementById('shopAddress').value.trim(),
+                description: document.getElementById('shopDescription').value.trim()
+            };
+
+            // Validation
+            if (!shopData.name || !shopData.email || !shopData.ownerName || !shopData.category || !shopData.phone || !shopData.address) {
+                showToast("Please fill all required fields", 'error');
+                return;
+            }
+
+            try {
+                showToast("Creating shop account...", 'info');
+
+                // Generate temporary password
+                const tempPassword = generateTempPassword();
+                
+                // 1. Create Firebase Auth User
+                const userCredential = await auth.createUserWithEmailAndPassword(shopData.email, tempPassword);
+                const userId = userCredential.user.uid;
+
+                // 2. Create Shop Document in Firestore
+                const shopDoc = {
+                    name: shopData.name,
+                    owner: shopData.email,
+                    ownerName: shopData.ownerName,
+                    category: shopData.category,
+                    phone: shopData.phone,
+                    address: shopData.address,
+                    description: shopData.description,
+                    isActive: true,
+                    createdAt: new Date().toISOString(),
+                    createdBy: currentAdmin.email
+                };
+
+                await db.collection('shops').doc(userId).set(shopDoc);
+
+                // 3. Show success with credentials
+                showToast("Shop account created successfully!", 'success');
+                
+                // Show credentials to admin
+                setTimeout(() => {
+                    alert(`🎉 SHOP ACCOUNT CREATED!\n\n📧 Email: ${shopData.email}\n🔑 Temporary Password: ${tempPassword}\n\n⚠️ Please share these credentials with the shop owner securely.`);
+                }, 1000);
+
+                closeCreateShopModal();
+                
+                // Refresh shops list
+                loadShopsData();
+
+            } catch (error) {
+                console.error("Error creating shop:", error);
+                if (error.code === 'auth/email-already-in-use') {
+                    showToast("Email already registered", 'error');
+                } else {
+                    showToast("Error creating shop: " + error.message, 'error');
+                }
+            }
+        }
+
+        // Generate Temporary Password
+        function generateTempPassword() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let password = '';
+            for (let i = 0; i < 8; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return password + '!1';
+        }
+
+        // Load Shops Data
+        function loadShopsData() {
+            showToast("Shops list updated", 'info');
+        }
 
         // Navigation
         function navigateToPage(page) {
@@ -890,21 +955,18 @@ function loadShopsData() {
                 case 'shops':
                     loadShopsData();
                     break;
-                // Additional cases for other pages
             }
         }
 
         // Data Loading Functions
         async function loadPlatformStats() {
-            // This would fetch real data from Firebase
-            // For demo, we'll use mock data
             platformStats = {
-    totalRevenue: 0,
-    totalOrders: 0,
-    activeShops: 0,
-    totalUsers: 0,
-    pendingApprovals: 0
-};
+                totalRevenue: 0,
+                totalOrders: 0,
+                activeShops: 0,
+                totalUsers: 0,
+                pendingApprovals: 0
+            };
             
             updateStatsDisplay();
         }
@@ -918,31 +980,18 @@ function loadShopsData() {
             // Update sidebar stats
             document.getElementById('sidebarShops').textContent = platformStats.activeShops;
             document.getElementById('sidebarUsers').textContent = platformStats.totalUsers.toLocaleString();
-            document.getElementById('sidebarRevenue').textContent = `₹${(platformStats.totalRevenue / 30).toLocaleString()}`; // Daily average
+            document.getElementById('sidebarRevenue').textContent = `₹0`;
         }
 
         function loadDashboardData() {
-    // Clean Recent Activity
-    document.getElementById('recentActivity').innerHTML = `
-        <div style="text-align: center; padding: 40px; color: var(--text-light);">
-            <i class="fas fa-inbox" style="font-size: 50px; margin-bottom: 15px;"></i>
-            <h4 style="color: var(--text-light); margin-bottom: 10px;">No Activity Yet</h4>
-            <p>Activity will appear here as your platform grows</p>
-        </div>
-    `;
-    
-    // Clean Pending Approvals
-    document.getElementById('pendingApprovals').innerHTML = `
-        <div style="text-align: center; padding: 20px; color: var(--text-light);">
-            <i class="fas fa-check-circle" style="font-size: 40px; margin-bottom: 10px;"></i>
-            <p>No Pending Approvals</p>
-            <small>You're all caught up!</small>
-        </div>
-    `;
-}
-        function loadShopsData() {
-            // This would load real shop data from Firebase
-            console.log('Loading shops data...');
+            // Load recent activity
+            document.getElementById('recentActivity').innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--text-light);">
+                    <i class="fas fa-inbox" style="font-size: 50px; margin-bottom: 15px;"></i>
+                    <h4 style="color: var(--text-light); margin-bottom: 10px;">No Activity Yet</h4>
+                    <p>Activity will appear here as your platform grows</p>
+                </div>
+            `;
         }
 
         // Utility Functions
@@ -969,8 +1018,7 @@ function loadShopsData() {
         }
 
         function checkAdminAuth() {
-            // Check if admin is already logged in (for demo)
-            // In real app, this would check Firebase auth state
+            // Check if admin is already logged in
         }
 
         // Initialize the admin app when DOM is loaded
