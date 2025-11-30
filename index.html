@@ -1059,80 +1059,82 @@ function navigateToPage(page) {
         }
 
         async function loadShopsData() {
-            try {
-                const snapshot = await db.collection('shops').get();
-                const shopsTable = document.getElementById('shopsTable');
-                
-                if (!shopsTable) {
-                    console.error("shopsTable element not found");
-                    return;
-                }
-                
-                if (snapshot.empty) {
-                    shopsTable.innerHTML = `
-                        <tr>
-                            <td colspan="8" style="text-align: center; padding: 60px 20px;">
-                                <i class="fas fa-store-slash" style="font-size: 60px; color: var(--text-light); margin-bottom: 15px;"></i>
-                                <h4 style="color: var(--text-light); margin-bottom: 10px;">No Shops Yet</h4>
-                                <p style="color: var(--text-light); margin-bottom: 20px;">Create your first shop to get started</p>
-                                <button class="btn-admin" onclick="showCreateShopModal()">
-                                    <i class="fas fa-plus"></i> Create Your First Shop
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                    return;
-                }
-                
-                let tableHtml = '';
-                snapshot.forEach(doc => {
-                    const shop = { id: doc.id, ...doc.data() };
-                    const joinDate = shop.createdAt ? new Date(shop.createdAt).toLocaleDateString() : 'Recently';
-                    
-                    tableHtml += `
-                        <tr>
-                            <td>
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <div style="width: 40px; height: 40px; background: #0F2C59; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
-                                        <i class="fas fa-store"></i>
-                                    </div>
-                                    <div>
-                                        <strong>${shop.name}</strong>
-                                        <div style="font-size: 12px; color: var(--text-light);">${shop.owner}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>${shop.ownerName || shop.owner}</td>
-                            <td>
-                                <span class="category-badge">${shop.category}</span>
-                            </td>
-                            <td>
-                                <span class="status-badge active">Active</span>
-                            </td>
-                            <td>0</td>
-                            <td>₹0</td>
-                            <td>${joinDate}</td>
-                            <td>
-                                <div style="display: flex; gap: 5px;">
-                                    <button class="btn-action" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn-action btn-danger" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                });
-                
-                shopsTable.innerHTML = tableHtml;
-                console.log(`✅ Loaded ${snapshot.size} shops`);
-                
-            } catch (error) {
-                console.error("Error loading shops:", error);
-            }
+    try {
+        const snapshot = await db.collection('shops').get();
+        const shopsTable = document.getElementById('shopsTable');
+        
+        if (!shopsTable) {
+            console.error("shopsTable element not found");
+            return;
         }
+        
+        if (snapshot.empty) {
+            shopsTable.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 60px 20px;">
+                        <i class="fas fa-store-slash" style="font-size: 60px; color: var(--text-light); margin-bottom: 15px;"></i>
+                        <h4 style="color: var(--text-light); margin-bottom: 10px;">No Shops Yet</h4>
+                        <p style="color: var(--text-light); margin-bottom: 20px;">Create your first shop to get started</p>
+                        <button class="btn-admin" onclick="showCreateShopModal()">
+                            <i class="fas fa-plus"></i> Create Your First Shop
+                        </button>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        let tableHtml = '';
+        snapshot.forEach(doc => {
+            const shop = { id: doc.id, ...doc.data() };
+            const joinDate = shop.createdAt ? new Date(shop.createdAt).toLocaleDateString() : 'Recently';
+            
+            tableHtml += `
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 40px; height: 40px; background: #0F2C59; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <div>
+                                <strong>${shop.name}</strong>
+                                <div style="font-size: 12px; color: var(--text-light);">${shop.owner}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${shop.ownerName || shop.owner}</td>
+                    <td>
+                        <span class="status-badge" style="background: #E0F2FE; color: #0369A1; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">
+                            ${shop.category}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-badge status-active">Active</span>
+                    </td>
+                    <td>0</td>
+                    <td>₹0</td>
+                    <td>${joinDate}</td>
+                    <td>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn-admin btn-sm" onclick="editShop('${doc.id}')" title="Edit Shop">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="btn-admin btn-sm" style="background: var(--danger);" onclick="deleteShop('${doc.id}', '${shop.name}')" title="Delete Shop">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        shopsTable.innerHTML = tableHtml;
+        console.log(`✅ Loaded ${snapshot.size} shops`);
+        
+    } catch (error) {
+        console.error("Error loading shops:", error);
+    }
+}
 
         async function refreshShopsList() {
             console.log("🔄 Refreshing shops list...");
