@@ -984,70 +984,84 @@ function navigateToPage(page) {
         }
 
         async function createShopAccount() {
-            const shopData = {
-                name: document.getElementById('shopName').value.trim(),
-                email: document.getElementById('ownerEmail').value.trim(),
-                ownerName: document.getElementById('ownerName').value.trim(),
-                category: document.getElementById('shopCategory').value,
-                phone: document.getElementById('shopPhone').value.trim(),
-                address: document.getElementById('shopAddress').value.trim(),
-                description: document.getElementById('shopDescription').value.trim()
-            };
+    console.log("🔴 STEP 1: Function started");
+    
+    const shopData = {
+        name: document.getElementById('shopName').value.trim(),
+        email: document.getElementById('ownerEmail').value.trim(),
+        ownerName: document.getElementById('ownerName').value.trim(),
+        category: document.getElementById('shopCategory').value,
+        phone: document.getElementById('shopPhone').value.trim(),
+        address: document.getElementById('shopAddress').value.trim(),
+        description: document.getElementById('shopDescription').value.trim()
+    };
 
-            if (!shopData.name || !shopData.email || !shopData.ownerName || !shopData.category || !shopData.phone || !shopData.address) {
-                alert("Please fill all required fields");
-                return;
-            }
+    console.log("🔴 STEP 2: Shop data collected", shopData);
 
-            try {
-                console.log("Creating shop account...");
+    if (!shopData.name || !shopData.email || !shopData.ownerName || !shopData.category || !shopData.phone || !shopData.address) {
+        console.log("🔴 STEP 3: Validation failed");
+        alert("Please fill all required fields");
+        return;
+    }
 
-                const tempPassword = generateTempPassword();
-                
-                const userCredential = await auth.createUserWithEmailAndPassword(shopData.email, tempPassword);
-                const userId = userCredential.user.uid;
+    console.log("🔴 STEP 4: Validation passed");
 
-                const shopDoc = {
-                    name: shopData.name,
-                    owner: shopData.email,
-                    ownerName: shopData.ownerName,
-                    category: shopData.category,
-                    phone: shopData.phone,
-                    address: shopData.address,
-                    description: shopData.description,
-                    isActive: true,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    createdBy: currentAdmin.email
-                };
+    try {
+        console.log("🔴 STEP 5: Starting Firebase operations");
 
-                await db.collection('shops').doc(userId).set(shopDoc);
+        const tempPassword = generateTempPassword();
+        console.log("🔴 STEP 6: Temp password generated:", tempPassword);
+        
+        console.log("🔴 STEP 7: Creating auth user...");
+        const userCredential = await auth.createUserWithEmailAndPassword(shopData.email, tempPassword);
+        console.log("🔴 STEP 8: Auth user created, UID:", userCredential.user.uid);
 
-                await db.collection('users').doc(userId).set({
-                    email: shopData.email,
-                    name: shopData.ownerName,
-                    role: 'shopkeeper',
-                    shopId: userId,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    createdBy: currentAdmin.email
-                });
+        const userId = userCredential.user.uid;
 
-                alert(`🎉 SHOP ACCOUNT CREATED!\n\n📧 Email: ${shopData.email}\n🔑 Temporary Password: ${tempPassword}\n\n⚠️ Please share these credentials securely.`);
+        const shopDoc = {
+            name: shopData.name,
+            owner: shopData.email,
+            ownerName: shopData.ownerName,
+            category: shopData.category,
+            phone: shopData.phone,
+            address: shopData.address,
+            description: shopData.description,
+            isActive: true,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            createdBy: currentAdmin.email
+        };
 
-                closeCreateShopModal();
-                
-                setTimeout(() => {
-                    refreshShopsList();
-                }, 500);
-                
-            } catch (error) {
-                console.error("Error creating shop:", error);
-                if (error.code === 'auth/email-already-in-use') {
-                    alert("Email already registered");
-                } else {
-                    alert("Error creating shop: " + error.message);
-                }
-            }
-        }
+        console.log("🔴 STEP 9: Creating shop document...");
+        await db.collection('shops').doc(userId).set(shopDoc);
+        console.log("🔴 STEP 10: Shop document created successfully!");
+
+        console.log("🔴 STEP 11: Creating user document...");
+        await db.collection('users').doc(userId).set({
+            email: shopData.email,
+            name: shopData.ownerName,
+            role: 'shopkeeper',
+            shopId: userId,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            createdBy: currentAdmin.email
+        });
+        console.log("🔴 STEP 12: User document created successfully!");
+
+        console.log("🎉 ALL STEPS COMPLETED SUCCESSFULLY!");
+        alert(`✅ Shop Created!\nEmail: ${shopData.email}\nPassword: ${tempPassword}`);
+
+        closeCreateShopModal();
+        
+        setTimeout(() => {
+            refreshShopsList();
+        }, 500);
+        
+    } catch (error) {
+        console.error("🔴 ERROR STEP:", error);
+        console.error("Error code:", error.code);
+        console.error("Error message:", error.message);
+        alert("Error: " + error.message);
+    }
+}
 
                 // ★★★ EDIT SHOP FUNCTION ★★★
         async function editShop(shopId) {
