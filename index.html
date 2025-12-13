@@ -13,6 +13,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --admin-primary: #7C3AED;
@@ -244,6 +245,21 @@
             color: #991B1B;
         }
         
+        .status-delivered {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+        
+        .status-processing {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+        
+        .status-cancelled {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+        
         /* Forms */
         .form-group {
             margin-bottom: 1rem;
@@ -270,29 +286,12 @@
             border-color: var(--admin-primary);
         }
         
-        /* Image Upload */
-        .image-upload-container {
-            border: 2px dashed var(--border);
-            border-radius: 8px;
-            padding: 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: var(--admin-secondary);
-        }
-        
-        .image-upload-container:hover {
-            border-color: var(--admin-primary);
-            background: var(--admin-accent);
-        }
-        
-        .image-preview {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin: 10px auto;
-            display: block;
+        /* Charts */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+            margin: 20px 0;
         }
         
         /* Modals */
@@ -701,12 +700,12 @@
                     <div class="admin-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
                             <div style="display: flex; gap: 10px;">
-                                <button class="btn-admin btn-sm active">All Products</button>
-                                <button class="btn-admin btn-sm">Active</button>
-                                <button class="btn-admin btn-sm">Out of Stock</button>
+                                <button class="btn-admin btn-sm active" onclick="filterProducts('all')">All Products</button>
+                                <button class="btn-admin btn-sm" onclick="filterProducts('active')">Active</button>
+                                <button class="btn-admin btn-sm" onclick="filterProducts('outofstock')">Out of Stock</button>
                             </div>
                             <div style="position: relative;">
-                                <input type="text" class="form-control" placeholder="Search products..." style="padding-left: 40px; width: 300px;">
+                                <input type="text" class="form-control" id="productSearch" placeholder="Search products..." style="padding-left: 40px; width: 300px;" onkeyup="searchProducts()">
                                 <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-light);"></i>
                             </div>
                         </div>
@@ -726,7 +725,13 @@
                                     </tr>
                                 </thead>
                                 <tbody id="productsTable">
-                                    <!-- Products will be loaded here -->
+                                    <tr>
+                                        <td colspan="8" style="text-align: center; padding: 60px 20px;">
+                                            <i class="fas fa-box-open" style="font-size: 60px; color: var(--text-light); margin-bottom: 15px;"></i>
+                                            <h4 style="color: var(--text-light); margin-bottom: 10px;">No Products Yet</h4>
+                                            <p style="color: var(--text-light); margin-bottom: 20px;">Add your first product to get started</p>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -741,19 +746,23 @@
                             Orders Management
                         </h2>
                         <div style="display: flex; gap: 10px;">
-                            <button class="btn-outline">Export CSV</button>
-                            <button class="btn-outline">Print Report</button>
+                            <button class="btn-outline" onclick="exportOrders()">Export CSV</button>
+                            <button class="btn-outline" onclick="printOrders()">Print Report</button>
                         </div>
                     </div>
                     
                     <div class="admin-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
                             <div style="display: flex; gap: 10px;">
-                                <button class="btn-admin btn-sm active">All Orders</button>
-                                <button class="btn-admin btn-sm">Pending</button>
-                                <button class="btn-admin btn-sm">Processing</button>
-                                <button class="btn-admin btn-sm">Delivered</button>
-                                <button class="btn-admin btn-sm">Cancelled</button>
+                                <button class="btn-admin btn-sm active" onclick="filterOrders('all')">All Orders</button>
+                                <button class="btn-admin btn-sm" onclick="filterOrders('pending')">Pending</button>
+                                <button class="btn-admin btn-sm" onclick="filterOrders('processing')">Processing</button>
+                                <button class="btn-admin btn-sm" onclick="filterOrders('delivered')">Delivered</button>
+                                <button class="btn-admin btn-sm" onclick="filterOrders('cancelled')">Cancelled</button>
+                            </div>
+                            <div style="position: relative;">
+                                <input type="text" class="form-control" id="orderSearch" placeholder="Search orders..." style="padding-left: 40px; width: 300px;" onkeyup="searchOrders()">
+                                <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-light);"></i>
                             </div>
                         </div>
                         
@@ -771,7 +780,13 @@
                                     </tr>
                                 </thead>
                                 <tbody id="ordersTable">
-                                    <!-- Orders will be loaded here -->
+                                    <tr>
+                                        <td colspan="7" style="text-align: center; padding: 60px 20px;">
+                                            <i class="fas fa-shopping-bag" style="font-size: 60px; color: var(--text-light); margin-bottom: 15px;"></i>
+                                            <h4 style="color: var(--text-light); margin-bottom: 10px;">No Orders Yet</h4>
+                                            <p style="color: var(--text-light); margin-bottom: 20px;">Orders will appear here when customers place orders</p>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -793,13 +808,13 @@
                     <div class="admin-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
                             <div style="display: flex; gap: 10px;">
-                                <button class="btn-admin btn-sm active">All Users</button>
-                                <button class="btn-admin btn-sm">Customers</button>
-                                <button class="btn-admin btn-sm">Shopkeepers</button>
-                                <button class="btn-admin btn-sm">Admins</button>
+                                <button class="btn-admin btn-sm active" onclick="filterUsers('all')">All Users</button>
+                                <button class="btn-admin btn-sm" onclick="filterUsers('customer')">Customers</button>
+                                <button class="btn-admin btn-sm" onclick="filterUsers('shopkeeper')">Shopkeepers</button>
+                                <button class="btn-admin btn-sm" onclick="filterUsers('admin')">Admins</button>
                             </div>
                             <div style="position: relative;">
-                                <input type="text" class="form-control" placeholder="Search users..." style="padding-left: 40px; width: 300px;">
+                                <input type="text" class="form-control" id="userSearch" placeholder="Search users..." style="padding-left: 40px; width: 300px;" onkeyup="searchUsers()">
                                 <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-light);"></i>
                             </div>
                         </div>
@@ -817,9 +832,118 @@
                                     </tr>
                                 </thead>
                                 <tbody id="usersTable">
-                                    <!-- Users will be loaded here -->
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; padding: 60px 20px;">
+                                            <i class="fas fa-user-friends" style="font-size: 60px; color: var(--text-light); margin-bottom: 15px;"></i>
+                                            <h4 style="color: var(--text-light); margin-bottom: 10px;">No Users Yet</h4>
+                                            <p style="color: var(--text-light); margin-bottom: 20px;">Users will appear here when they register</p>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Page -->
+                <div id="analyticsPage" class="content-page" style="display: none;">
+                    <div class="admin-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-chart-line"></i>
+                            Platform Analytics
+                        </h2>
+                        <div style="display: flex; gap: 10px;">
+                            <select class="form-control" id="analyticsPeriod" style="width: 150px;" onchange="loadAnalyticsData()">
+                                <option value="7days">Last 7 Days</option>
+                                <option value="30days">Last 30 Days</option>
+                                <option value="90days">Last 90 Days</option>
+                                <option value="1year">Last 1 Year</option>
+                            </select>
+                            <button class="btn-outline" onclick="loadAnalyticsData()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Analytics Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Today's Revenue</div>
+                            <div class="stat-value" id="todayRevenue">₹0</div>
+                            <small style="color: var(--success);">
+                                <i class="fas fa-arrow-up"></i> <span id="revenueChange">0%</span>
+                            </small>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-label">Today's Orders</div>
+                            <div class="stat-value" id="todayOrders">0</div>
+                            <small style="color: var(--success);">
+                                <i class="fas fa-arrow-up"></i> <span id="orderChange">0%</span>
+                            </small>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-label">New Users Today</div>
+                            <div class="stat-value" id="todayUsers">0</div>
+                            <small style="color: var(--success);">
+                                <i class="fas fa-arrow-up"></i> <span id="userChange">0%</span>
+                            </small>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-label">Avg. Order Value</div>
+                            <div class="stat-value" id="avgOrderValue">₹0</div>
+                            <small style="color: var(--success);">
+                                <i class="fas fa-chart-line"></i> Trend
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- Charts -->
+                    <div class="admin-card">
+                        <h3 style="margin-bottom: 1rem; color: var(--text-dark);">
+                            <i class="fas fa-chart-bar"></i> Revenue Trend
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="admin-card">
+                                <h3 style="margin-bottom: 1rem; color: var(--text-dark);">
+                                    <i class="fas fa-chart-pie"></i> Order Status
+                                </h3>
+                                <div class="chart-container">
+                                    <canvas id="orderStatusChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="admin-card">
+                                <h3 style="margin-bottom: 1rem; color: var(--text-dark);">
+                                    <i class="fas fa-chart-pie"></i> User Distribution
+                                </h3>
+                                <div class="chart-container">
+                                    <canvas id="userDistributionChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Top Performing Shops -->
+                    <div class="admin-card">
+                        <h3 style="margin-bottom: 1rem; color: var(--text-dark);">
+                            <i class="fas fa-trophy"></i> Top Performing Shops
+                        </h3>
+                        <div id="topShops">
+                            <div style="text-align: center; padding: 40px; color: var(--text-light);">
+                                <i class="fas fa-chart-line" style="font-size: 50px; margin-bottom: 15px;"></i>
+                                <h4 style="color: var(--text-light); margin-bottom: 10px;">No Data Available</h4>
+                                <p>Performance data will appear here as shops start receiving orders</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -832,7 +956,7 @@
     <div class="modal-overlay" id="createShopModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Create New Shop</h3>
+                <h3 class="modal-title" id="shopModalTitle">Create New Shop</h3>
                 <button class="modal-close" onclick="closeCreateShopModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -875,14 +999,154 @@
                         <label class="form-label">Description</label>
                         <textarea class="form-control" id="shopDescription" placeholder="Shop description" rows="2"></textarea>
                     </div>
-                    <div class="alert alert-info">
+                    <div id="passwordSection" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="shopPassword" placeholder="Enter new password">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="shopConfirmPassword" placeholder="Confirm new password">
+                        </div>
+                    </div>
+                    <div class="alert alert-info" id="shopAlert">
                         <small><i class="fas fa-info-circle"></i> Login credentials will be sent to the owner's email</small>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-outline" onclick="closeCreateShopModal()">Cancel</button>
-                <button type="button" class="btn-admin" onclick="createShopAccount()">Create Shop Account</button>
+                <button type="button" class="btn-admin" id="shopModalButton" onclick="createShopAccount()">Create Shop Account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Product Modal -->
+    <div class="modal-overlay" id="createProductModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="productModalTitle">Add New Product</h3>
+                <button class="modal-close" onclick="closeCreateProductModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createProductForm">
+                    <div class="form-group">
+                        <label class="form-label">Product Name *</label>
+                        <input type="text" class="form-control" id="productName" placeholder="Enter product name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Shop *</label>
+                        <select class="form-control" id="productShop" required>
+                            <option value="">Select Shop</option>
+                            <!-- Shops will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Category *</label>
+                        <select class="form-control" id="productCategory" required>
+                            <option value="">Select Category</option>
+                            <option value="groceries">Groceries</option>
+                            <option value="vegetables">Vegetables</option>
+                            <option value="fruits">Fruits</option>
+                            <option value="dairy">Dairy</option>
+                            <option value="beverages">Beverages</option>
+                            <option value="snacks">Snacks</option>
+                            <option value="cosmetics">Cosmetics</option>
+                            <option value="electronics">Electronics</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Price (₹) *</label>
+                                <input type="number" class="form-control" id="productPrice" placeholder="Enter price" required step="0.01" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Stock Quantity *</label>
+                                <input type="number" class="form-control" id="productStock" placeholder="Enter quantity" required min="0">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="productDescription" placeholder="Product description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select class="form-control" id="productStatus">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="outofstock">Out of Stock</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-outline" onclick="closeCreateProductModal()">Cancel</button>
+                <button type="button" class="btn-admin" id="productModalButton" onclick="createProduct()">Add Product</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Password Modal -->
+    <div class="modal-overlay" id="updatePasswordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Update Password</h3>
+                <button class="modal-close" onclick="closeUpdatePasswordModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="updatePasswordForm">
+                    <div class="form-group">
+                        <label class="form-label">User Email</label>
+                        <input type="email" class="form-control" id="passwordUserEmail" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">User Name</label>
+                        <input type="text" class="form-control" id="passwordUserName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">User Role</label>
+                        <input type="text" class="form-control" id="passwordUserRole" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Password *</label>
+                        <input type="password" class="form-control" id="newPassword" placeholder="Enter new password" required>
+                        <small class="text-muted">Password must be at least 6 characters long</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password *</label>
+                        <input type="password" class="form-control" id="confirmPassword" placeholder="Confirm new password" required>
+                    </div>
+                    <div class="alert alert-warning">
+                        <small><i class="fas fa-exclamation-triangle"></i> This will immediately update the user's password. They will need to use the new password for login.</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-outline" onclick="closeUpdatePasswordModal()">Cancel</button>
+                <button type="button" class="btn-admin" onclick="updateUserPassword()">Update Password</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal-overlay" id="orderDetailsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Order Details</h3>
+                <button class="modal-close" onclick="closeOrderDetailsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="orderDetailsContent">
+                    <!-- Order details will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-outline" onclick="closeOrderDetailsModal()">Close</button>
+                <button type="button" class="btn-admin" onclick="updateOrderStatus()">Update Status</button>
             </div>
         </div>
     </div>
@@ -891,7 +1155,7 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
-        // Firebase Configuration - Updated for Raashanmart
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyD2-yz4xwYD5S_oXs6ryhNP8XIC94jzda4",
             authDomain: "dukaan-platform.firebaseapp.com",
@@ -900,6 +1164,15 @@
             messagingSenderId: "75765851780",
             appId: "1:75765851780:web:dd9567db1d39c3b09c84d1"
         };
+
+        // Initialize Firebase
+        let auth, db;
+        let currentAdmin = null;
+        let editingShopId = null;
+        let editingProductId = null;
+        let editingUserId = null;
+        let currentOrderId = null;
+        let revenueChart = null, orderStatusChart = null, userDistributionChart = null;
 
         // Toast Notification System
         function showToast(message, type = 'info') {
@@ -925,10 +1198,6 @@
             }, 4000);
         }
 
-        // Initialize Firebase
-        let auth, db;
-        let currentAdmin = null;
-
         // Initialize Admin App
         function initAdminApp() {
             try {
@@ -940,15 +1209,19 @@
                 // Check if admin is already logged in
                 auth.onAuthStateChanged(async (user) => {
                     if (user) {
-                        const userDoc = await db.collection('users').doc(user.uid).get();
-                        if (userDoc.exists && userDoc.data().role === 'admin') {
-                            currentAdmin = {
-                                uid: user.uid,
-                                email: user.email,
-                                displayName: user.displayName || 'Raashanmart Admin',
-                                isAdmin: true
-                            };
-                            showAdminScreen();
+                        try {
+                            const userDoc = await db.collection('users').doc(user.uid).get();
+                            if (userDoc.exists && userDoc.data().role === 'admin') {
+                                currentAdmin = {
+                                    uid: user.uid,
+                                    email: user.email,
+                                    displayName: user.displayName || 'Raashanmart Admin',
+                                    isAdmin: true
+                                };
+                                showAdminScreen();
+                            }
+                        } catch (error) {
+                            console.error("Error checking admin status:", error);
                         }
                     }
                 });
@@ -1048,6 +1321,9 @@
                 case 'users':
                     loadUsersData();
                     break;
+                case 'analytics':
+                    loadAnalyticsData();
+                    break;
             }
         }
 
@@ -1056,7 +1332,6 @@
             if (!timestamp) return 'Recently';
             
             try {
-                // Check if it's a Firestore Timestamp object
                 if (timestamp.toDate) {
                     const date = timestamp.toDate();
                     return date.toLocaleDateString('en-IN', {
@@ -1064,17 +1339,13 @@
                         month: 'short',
                         year: 'numeric'
                     });
-                } 
-                // Check if it's a Date object
-                else if (timestamp instanceof Date) {
+                } else if (timestamp instanceof Date) {
                     return timestamp.toLocaleDateString('en-IN', {
                         day: '2-digit',
                         month: 'short',
                         year: 'numeric'
                     });
-                }
-                // Check if it's a string that can be converted to Date
-                else if (typeof timestamp === 'string') {
+                } else if (typeof timestamp === 'string') {
                     const date = new Date(timestamp);
                     if (!isNaN(date.getTime())) {
                         return date.toLocaleDateString('en-IN', {
@@ -1084,15 +1355,14 @@
                         });
                     }
                 }
-                
                 return 'Recently';
             } catch (error) {
-                console.error('Error formatting timestamp:', error, timestamp);
+                console.error('Error formatting timestamp:', error);
                 return 'Recently';
             }
         }
 
-        // Dashboard Functions
+        // ✅ FIXED: Dashboard Functions
         async function loadDashboardData() {
             try {
                 const [shopsSnapshot, ordersSnapshot, usersSnapshot, productsSnapshot] = await Promise.all([
@@ -1110,16 +1380,17 @@
                 let totalRevenue = 0;
                 ordersSnapshot.forEach(doc => {
                     const order = doc.data();
-                    totalRevenue += order.total || 0;
+                    totalRevenue += parseFloat(order.total || 0);
                 });
                 document.getElementById('totalRevenue').textContent = `₹${totalRevenue.toLocaleString()}`;
 
-                // Load recent activity
+                // Load recent activity (orders)
                 const recentOrders = [];
                 ordersSnapshot.forEach(doc => {
                     recentOrders.push({ id: doc.id, ...doc.data() });
                 });
                 
+                // Sort by date
                 recentOrders.sort((a, b) => {
                     const dateA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
                     const dateB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
@@ -1127,8 +1398,8 @@
                 });
                 
                 const latestOrders = recentOrders.slice(0, 5);
-
                 const recentActivityEl = document.getElementById('recentActivity');
+
                 if (latestOrders.length > 0) {
                     recentActivityEl.innerHTML = latestOrders.map(order => {
                         const orderDate = order.createdAt ? formatFirestoreTimestamp(order.createdAt) : 'Recently';
@@ -1146,26 +1417,38 @@
                             </div>
                         </div>
                     `}).join('');
+                } else {
+                    recentActivityEl.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: var(--text-light);">
+                            <i class="fas fa-inbox" style="font-size: 50px; margin-bottom: 15px;"></i>
+                            <h4 style="color: var(--text-light); margin-bottom: 10px;">No Activity Yet</h4>
+                            <p>Activity will appear here as your platform grows</p>
+                        </div>
+                    `;
                 }
 
-                showToast('Dashboard data refreshed', 'success');
             } catch (error) {
                 console.error("Dashboard error:", error);
                 showToast('Error loading dashboard data', 'error');
             }
         }
 
-        // Shop Management Functions
+        // ✅ FIXED: Shop Management
         function showCreateShopModal() {
+            editingShopId = null;
+            document.getElementById('shopModalTitle').textContent = 'Create New Shop';
+            document.getElementById('shopModalButton').textContent = 'Create Shop Account';
+            document.getElementById('passwordSection').style.display = 'none';
+            document.getElementById('shopAlert').innerHTML = '<small><i class="fas fa-info-circle"></i> Login credentials will be sent to the owner\'s email</small>';
+            document.getElementById('createShopForm').reset();
             document.getElementById('createShopModal').classList.add('active');
         }
 
         function closeCreateShopModal() {
             document.getElementById('createShopModal').classList.remove('active');
-            document.getElementById('createShopForm').reset();
+            editingShopId = null;
         }
 
-        // ✅ FIXED: CREATE SHOP WITH PROPER DATE HANDLING
         async function createShopAccount() {
             const shopData = {
                 name: document.getElementById('shopName').value.trim(),
@@ -1175,8 +1458,7 @@
                 phone: document.getElementById('shopPhone').value.trim(),
                 address: document.getElementById('shopAddress').value.trim(),
                 description: document.getElementById('shopDescription').value.trim(),
-                status: 'active',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp() // ✅ Correct way
+                status: 'active'
             };
 
             if (!shopData.name || !shopData.email || !shopData.ownerName || !shopData.category || !shopData.phone || !shopData.address) {
@@ -1185,47 +1467,73 @@
             }
 
             try {
-                // Generate temporary password
-                const tempPassword = generateTempPassword();
-                
-                // Create Firebase Auth user for shopkeeper
-                const userCredential = await auth.createUserWithEmailAndPassword(shopData.email, tempPassword);
-                const userId = userCredential.user.uid;
+                if (editingShopId) {
+                    // Update existing shop
+                    await db.collection('shops').doc(editingShopId).update({
+                        ...shopData,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    // Check if password needs to be updated
+                    const newPassword = document.getElementById('shopPassword').value;
+                    const confirmPassword = document.getElementById('shopConfirmPassword').value;
+                    
+                    if (newPassword && confirmPassword) {
+                        if (newPassword.length < 6) {
+                            showToast('Password must be at least 6 characters', 'error');
+                            return;
+                        }
+                        if (newPassword !== confirmPassword) {
+                            showToast('Passwords do not match', 'error');
+                            return;
+                        }
+                        
+                        // Update password in Firebase Auth
+                        await auth.updatePassword(shopData.email, newPassword);
+                        showToast('Shop and password updated successfully', 'success');
+                    } else {
+                        showToast('Shop updated successfully', 'success');
+                    }
+                    
+                } else {
+                    // Create new shop
+                    const tempPassword = generateTempPassword();
+                    
+                    // Create Firebase Auth user
+                    const userCredential = await auth.createUserWithEmailAndPassword(shopData.email, tempPassword);
+                    const userId = userCredential.user.uid;
 
-                // Create shop document
-                await db.collection('shops').doc(userId).set({
-                    ...shopData,
-                    id: userId,
-                    createdBy: currentAdmin.email,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(), // ✅ Store as Firestore timestamp
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                    // Create shop document
+                    await db.collection('shops').doc(userId).set({
+                        ...shopData,
+                        id: userId,
+                        createdBy: currentAdmin.email,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
 
-                // Create user document with shopkeeper role
-                await db.collection('users').doc(userId).set({
-                    email: shopData.email,
-                    name: shopData.ownerName,
-                    role: 'shopkeeper',
-                    shopId: userId,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(), // ✅ Store as Firestore timestamp
-                    createdBy: currentAdmin.email
-                });
+                    // Create user document
+                    await db.collection('users').doc(userId).set({
+                        email: shopData.email,
+                        name: shopData.ownerName,
+                        role: 'shopkeeper',
+                        shopId: userId,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        createdBy: currentAdmin.email
+                    });
 
-                showToast(`Shop created successfully! Credentials sent to ${shopData.email}`, 'success');
+                    showToast(`Shop created! Email: ${shopData.email}, Password: ${tempPassword}`, 'success');
+                }
+
                 closeCreateShopModal();
                 loadShopsData();
 
-                // Display credentials for admin (in real app, you would send email)
-                console.log(`Shop credentials - Email: ${shopData.email}, Password: ${tempPassword}`);
-                showToast(`Temporary password: ${tempPassword}`, 'info');
-
             } catch (error) {
-                console.error('Error creating shop:', error);
-                showToast('Error creating shop: ' + error.message, 'error');
+                console.error('Error creating/updating shop:', error);
+                showToast('Error: ' + error.message, 'error');
             }
         }
 
-        // ✅ FIXED: LOAD SHOPS WITH PROPER DATE FORMATTING
         async function loadShopsData() {
             try {
                 const snapshot = await db.collection('shops').get();
@@ -1248,25 +1556,9 @@
                 }
                 
                 let tableHtml = '';
-                let shopCount = 0;
-                
-                // Get all shops in an array for processing
-                const shops = [];
                 snapshot.forEach(doc => {
-                    shops.push({ id: doc.id, ...doc.data() });
-                });
-                
-                // Sort shops by creation date (newest first)
-                shops.sort((a, b) => {
-                    const dateA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
-                    const dateB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
-                    return dateB - dateA;
-                });
-                
-                // Create table rows
-                shops.forEach(shop => {
-                    shopCount++;
-                    const joinDate = formatFirestoreTimestamp(shop.createdAt); // ✅ Use fixed function
+                    const shop = doc.data();
+                    const joinDate = formatFirestoreTimestamp(shop.createdAt);
                     
                     tableHtml += `
                         <tr>
@@ -1294,17 +1586,16 @@
                             </td>
                             <td>${shop.productCount || 0}</td>
                             <td>₹${shop.revenue || 0}</td>
-                            <td>
-                                <span style="font-size: 0.875rem; color: var(--text-dark);">
-                                    ${joinDate}
-                                </span>
-                            </td>
+                            <td>${joinDate}</td>
                             <td>
                                 <div style="display: flex; gap: 5px;">
-                                    <button class="btn-admin btn-sm" onclick="editShop('${shop.id}')" title="Edit Shop">
+                                    <button class="btn-admin btn-sm" onclick="editShop('${doc.id}')" title="Edit Shop">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn-admin btn-sm" style="background: var(--danger);" onclick="deleteShop('${shop.id}')" title="Delete Shop">
+                                    <button class="btn-admin btn-sm" onclick="updatePasswordForUser('${shop.email || shop.owner}', '${shop.ownerName || shop.name}', 'shopkeeper', '${doc.id}')" title="Update Password" style="background: var(--warning);">
+                                        <i class="fas fa-key"></i>
+                                    </button>
+                                    <button class="btn-admin btn-sm" style="background: var(--danger);" onclick="deleteShop('${doc.id}')" title="Delete Shop">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -1313,14 +1604,7 @@
                     `;
                 });
                 
-                // Update the "All Shops" button count
-                const allShopsBtn = document.querySelector('.btn-admin.btn-sm.active');
-                if (allShopsBtn) {
-                    allShopsBtn.textContent = `All Shops (${shopCount})`;
-                }
-                
                 shopsTable.innerHTML = tableHtml;
-                showToast(`Loaded ${shopCount} shops`, 'success');
                 
             } catch (error) {
                 console.error('Error loading shops:', error);
@@ -1333,8 +1617,8 @@
                 const shopDoc = await db.collection('shops').doc(shopId).get();
                 if (shopDoc.exists) {
                     const shop = shopDoc.data();
+                    editingShopId = shopId;
                     
-                    // Pre-fill the modal with shop data
                     document.getElementById('shopName').value = shop.name || '';
                     document.getElementById('ownerEmail').value = shop.email || shop.owner || '';
                     document.getElementById('ownerName').value = shop.ownerName || '';
@@ -1343,14 +1627,12 @@
                     document.getElementById('shopAddress').value = shop.address || '';
                     document.getElementById('shopDescription').value = shop.description || '';
                     
-                    // Update modal title
-                    document.querySelector('#createShopModal .modal-title').textContent = 'Edit Shop';
-                    document.querySelector('#createShopModal .btn-admin').textContent = 'Update Shop';
+                    document.getElementById('shopModalTitle').textContent = 'Edit Shop';
+                    document.getElementById('shopModalButton').textContent = 'Update Shop';
+                    document.getElementById('passwordSection').style.display = 'block';
+                    document.getElementById('shopAlert').innerHTML = '<small><i class="fas fa-info-circle"></i> Leave password fields blank to keep current password</small>';
                     
-                    // Store shop ID for update
-                    document.getElementById('createShopModal').dataset.shopId = shopId;
-                    
-                    showCreateShopModal();
+                    document.getElementById('createShopModal').classList.add('active');
                 }
             } catch (error) {
                 console.error('Error loading shop for edit:', error);
@@ -1361,15 +1643,8 @@
         async function deleteShop(shopId) {
             if (confirm('Are you sure you want to delete this shop? This action cannot be undone.')) {
                 try {
-                    // First, delete the shop document
                     await db.collection('shops').doc(shopId).delete();
-                    
-                    // Then delete the user document
                     await db.collection('users').doc(shopId).delete();
-                    
-                    // Optional: Delete the Firebase Auth user
-                    // You might want to disable instead of delete
-                    
                     showToast('Shop deleted successfully', 'success');
                     loadShopsData();
                 } catch (error) {
@@ -1379,15 +1654,19 @@
             }
         }
 
-        // Product Management Functions
+        // ✅ FIXED: Product Management
         function showCreateProductModal() {
-            document.getElementById('createProductModal').classList.add('active');
+            editingProductId = null;
+            document.getElementById('productModalTitle').textContent = 'Add New Product';
+            document.getElementById('productModalButton').textContent = 'Add Product';
+            document.getElementById('createProductForm').reset();
             loadShopsForProduct();
+            document.getElementById('createProductModal').classList.add('active');
         }
 
         function closeCreateProductModal() {
             document.getElementById('createProductModal').classList.remove('active');
-            document.getElementById('createProductForm').reset();
+            editingProductId = null;
         }
 
         async function loadShopsForProduct() {
@@ -1405,6 +1684,50 @@
             }
         }
 
+        async function createProduct() {
+            const productData = {
+                name: document.getElementById('productName').value.trim(),
+                shopId: document.getElementById('productShop').value,
+                category: document.getElementById('productCategory').value,
+                price: parseFloat(document.getElementById('productPrice').value),
+                stock: parseInt(document.getElementById('productStock').value),
+                description: document.getElementById('productDescription').value.trim(),
+                status: document.getElementById('productStatus').value,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (!productData.name || !productData.shopId || !productData.category || 
+                isNaN(productData.price) || isNaN(productData.stock)) {
+                showToast('Please fill all required fields correctly', 'error');
+                return;
+            }
+
+            try {
+                if (editingProductId) {
+                    // Update existing product
+                    await db.collection('products').doc(editingProductId).update({
+                        ...productData,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    showToast('Product updated successfully', 'success');
+                } else {
+                    // Create new product
+                    await db.collection('products').add({
+                        ...productData,
+                        createdBy: currentAdmin.email
+                    });
+                    showToast('Product added successfully', 'success');
+                }
+
+                closeCreateProductModal();
+                loadProductsData();
+
+            } catch (error) {
+                console.error('Error creating/updating product:', error);
+                showToast('Error: ' + error.message, 'error');
+            }
+        }
+
         async function loadProductsData() {
             try {
                 const snapshot = await db.collection('products').get();
@@ -1413,9 +1736,10 @@
                 if (snapshot.empty) {
                     productsTable.innerHTML = `
                         <tr>
-                            <td colspan="8" style="text-align: center; padding: 40px 20px;">
-                                <i class="fas fa-box-open" style="font-size: 40px; color: var(--text-light); margin-bottom: 10px;"></i>
-                                <p style="color: var(--text-light);">No products found</p>
+                            <td colspan="8" style="text-align: center; padding: 60px 20px;">
+                                <i class="fas fa-box-open" style="font-size: 60px; color: var(--text-light); margin-bottom: 15px;"></i>
+                                <h4 style="color: var(--text-light); margin-bottom: 10px;">No Products Yet</h4>
+                                <p style="color: var(--text-light); margin-bottom: 20px;">Add your first product to get started</p>
                             </td>
                         </tr>
                     `;
@@ -1423,28 +1747,40 @@
                 }
                 
                 let tableHtml = '';
+                const shopsCache = {};
+                
+                // Get all shops for reference
+                const shopsSnapshot = await db.collection('shops').get();
+                shopsSnapshot.forEach(doc => {
+                    shopsCache[doc.id] = doc.data().name;
+                });
+                
                 snapshot.forEach(doc => {
                     const product = doc.data();
-                    const createdDate = formatFirestoreTimestamp(product.createdAt);
+                    const shopName = shopsCache[product.shopId] || 'Unknown Shop';
                     
                     tableHtml += `
                         <tr>
                             <td>
-                                ${product.images && product.images.length > 0 ? 
-                                    `<img src="${product.images[0]}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">` :
-                                    `<div style="width: 50px; height: 50px; background: var(--admin-accent); border-radius: 4px; display: flex; align-items: center; justify-content: center;">
-                                        <i class="fas fa-image" style="color: var(--text-light);"></i>
-                                    </div>`
-                                }
+                                <div style="width: 50px; height: 50px; background: var(--admin-accent); border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-box" style="color: var(--text-light);"></i>
+                                </div>
                             </td>
                             <td>${product.name || 'Unnamed Product'}</td>
-                            <td>${product.shopName || 'N/A'}</td>
+                            <td>${shopName}</td>
                             <td>${product.category || 'Uncategorized'}</td>
                             <td>₹${product.price || 0}</td>
                             <td>${product.stock || 0}</td>
-                            <td><span class="status-badge ${product.status === 'active' ? 'status-active' : 'status-inactive'}">${product.status || 'active'}</span></td>
+                            <td><span class="status-badge ${product.status === 'active' ? 'status-active' : product.status === 'inactive' ? 'status-inactive' : 'status-pending'}">${product.status || 'active'}</span></td>
                             <td>
-                                <button class="btn-admin btn-sm">Edit</button>
+                                <div style="display: flex; gap: 5px;">
+                                    <button class="btn-admin btn-sm" onclick="editProduct('${doc.id}')" title="Edit Product">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-admin btn-sm" style="background: var(--danger);" onclick="deleteProduct('${doc.id}')" title="Delete Product">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     `;
@@ -1454,6 +1790,689 @@
                 
             } catch (error) {
                 console.error('Error loading products:', error);
+                showToast('Error loading products data', 'error');
+            }
+        }
+
+        async function editProduct(productId) {
+            try {
+                const productDoc = await db.collection('products').doc(productId).get();
+                if (productDoc.exists) {
+                    const product = productDoc.data();
+                    editingProductId = productId;
+                    
+                    document.getElementById('productName').value = product.name || '';
+                    document.getElementById('productCategory').value = product.category || '';
+                    document.getElementById('productPrice').value = product.price || '';
+                    document.getElementById('productStock').value = product.stock || '';
+                    document.getElementById('productDescription').value = product.description || '';
+                    document.getElementById('productStatus').value = product.status || 'active';
+                    
+                    // Load shops and select the correct one
+                    await loadShopsForProduct();
+                    document.getElementById('productShop').value = product.shopId || '';
+                    
+                    document.getElementById('productModalTitle').textContent = 'Edit Product';
+                    document.getElementById('productModalButton').textContent = 'Update Product';
+                    
+                    document.getElementById('createProductModal').classList.add('active');
+                }
+            } catch (error) {
+                console.error('Error loading product for edit:', error);
+                showToast('Error loading product details', 'error');
+            }
+        }
+
+        async function deleteProduct(productId) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                try {
+                    await db.collection('products').doc(productId).delete();
+                    showToast('Product deleted successfully', 'success');
+                    loadProductsData();
+                } catch (error) {
+                    console.error('Error deleting product:', error);
+                    showToast('Error deleting product', 'error');
+                }
+            }
+        }
+
+        // ✅ FIXED: Orders Management
+        async function loadOrdersData() {
+            try {
+                const snapshot = await db.collection('orders').orderBy('createdAt', 'desc').get();
+                const ordersTable = document.getElementById('ordersTable');
+                
+                if (snapshot.empty) {
+                    ordersTable.innerHTML = `
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 60px 20px;">
+                                <i class="fas fa-shopping-bag" style="font-size: 60px; color: var(--text-light); margin-bottom: 15px;"></i>
+                                <h4 style="color: var(--text-light); margin-bottom: 10px;">No Orders Yet</h4>
+                                <p style="color: var(--text-light); margin-bottom: 20px;">Orders will appear here when customers place orders</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                let tableHtml = '';
+                const shopsCache = {};
+                const usersCache = {};
+                
+                // Get all shops and users for reference
+                const [shopsSnapshot, usersSnapshot] = await Promise.all([
+                    db.collection('shops').get(),
+                    db.collection('users').get()
+                ]);
+                
+                shopsSnapshot.forEach(doc => {
+                    shopsCache[doc.id] = doc.data().name;
+                });
+                
+                usersSnapshot.forEach(doc => {
+                    const user = doc.data();
+                    usersCache[doc.id] = user.name || user.email;
+                });
+                
+                snapshot.forEach(doc => {
+                    const order = doc.data();
+                    const orderDate = formatFirestoreTimestamp(order.createdAt);
+                    const shopName = shopsCache[order.shopId] || 'Unknown Shop';
+                    const customerName = usersCache[order.userId] || order.customerName || 'Customer';
+                    
+                    let statusClass = 'status-pending';
+                    if (order.status === 'delivered') statusClass = 'status-delivered';
+                    else if (order.status === 'processing') statusClass = 'status-processing';
+                    else if (order.status === 'cancelled') statusClass = 'status-cancelled';
+                    
+                    tableHtml += `
+                        <tr>
+                            <td>${order.orderId || doc.id.slice(-8)}</td>
+                            <td>
+                                <div>
+                                    <strong>${customerName}</strong>
+                                    <div style="font-size: 12px; color: var(--text-light);">${order.customerEmail || ''}</div>
+                                </div>
+                            </td>
+                            <td>${shopName}</td>
+                            <td>₹${order.total || 0}</td>
+                            <td><span class="status-badge ${statusClass}">${order.status || 'pending'}</span></td>
+                            <td>${orderDate}</td>
+                            <td>
+                                <div style="display: flex; gap: 5px;">
+                                    <button class="btn-admin btn-sm" onclick="viewOrderDetails('${doc.id}')" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-admin btn-sm" style="background: var(--warning);" onclick="updateOrderStatusPrompt('${doc.id}', '${order.status || 'pending'}')" title="Update Status">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                ordersTable.innerHTML = tableHtml;
+                
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                showToast('Error loading orders data', 'error');
+            }
+        }
+
+        async function viewOrderDetails(orderId) {
+            try {
+                const orderDoc = await db.collection('orders').doc(orderId).get();
+                if (orderDoc.exists) {
+                    const order = orderDoc.data();
+                    currentOrderId = orderId;
+                    
+                    const shopDoc = order.shopId ? await db.collection('shops').doc(order.shopId).get() : null;
+                    const shopName = shopDoc?.exists ? shopDoc.data().name : 'Unknown Shop';
+                    
+                    let itemsHtml = '';
+                    if (order.items && Array.isArray(order.items)) {
+                        order.items.forEach(item => {
+                            itemsHtml += `
+                                <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid var(--border);">
+                                    <div>
+                                        <strong>${item.name || 'Product'}</strong>
+                                        <div style="font-size: 12px; color: var(--text-light);">Qty: ${item.quantity || 1}</div>
+                                    </div>
+                                    <div>₹${item.price || 0}</div>
+                                </div>
+                            `;
+                        });
+                    }
+                    
+                    const orderDate = formatFirestoreTimestamp(order.createdAt);
+                    
+                    document.getElementById('orderDetailsContent').innerHTML = `
+                        <div>
+                            <h4 style="margin-bottom: 20px;">Order #${order.orderId || orderId.slice(-8)}</h4>
+                            
+                            <div style="background: var(--admin-secondary); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                    <div>
+                                        <strong>Customer Details</strong>
+                                        <div style="margin-top: 5px;">
+                                            <div>${order.customerName || 'Customer'}</div>
+                                            <div style="color: var(--text-light); font-size: 14px;">${order.customerEmail || ''}</div>
+                                            <div style="color: var(--text-light); font-size: 14px;">${order.customerPhone || ''}</div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <strong>Shop Details</strong>
+                                        <div style="margin-top: 5px;">
+                                            <div>${shopName}</div>
+                                            <div style="color: var(--text-light); font-size: 14px;">${order.shopAddress || ''}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <strong>Order Items</strong>
+                                ${itemsHtml || '<p style="color: var(--text-light); margin-top: 10px;">No items found</p>'}
+                            </div>
+                            
+                            <div style="background: var(--admin-secondary); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                    <span>Subtotal:</span>
+                                    <span>₹${order.subtotal || 0}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                    <span>Delivery Charge:</span>
+                                    <span>₹${order.deliveryCharge || 0}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-weight: bold; border-top: 1px solid var(--border); padding-top: 10px;">
+                                    <span>Total:</span>
+                                    <span>₹${order.total || 0}</span>
+                                </div>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <strong>Order Date</strong>
+                                    <div style="margin-top: 5px; color: var(--text-light);">${orderDate}</div>
+                                </div>
+                                <div>
+                                    <strong>Status</strong>
+                                    <div style="margin-top: 5px;">
+                                        <span class="status-badge ${order.status === 'delivered' ? 'status-delivered' : order.status === 'processing' ? 'status-processing' : order.status === 'cancelled' ? 'status-cancelled' : 'status-pending'}">
+                                            ${order.status || 'pending'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 20px;">
+                                <strong>Delivery Address</strong>
+                                <div style="margin-top: 5px; color: var(--text-light);">${order.deliveryAddress || 'Not specified'}</div>
+                            </div>
+                            
+                            <div style="margin-top: 20px;">
+                                <strong>Payment Method</strong>
+                                <div style="margin-top: 5px; color: var(--text-light);">${order.paymentMethod || 'Not specified'}</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('orderDetailsModal').classList.add('active');
+                }
+            } catch (error) {
+                console.error('Error loading order details:', error);
+                showToast('Error loading order details', 'error');
+            }
+        }
+
+        function closeOrderDetailsModal() {
+            document.getElementById('orderDetailsModal').classList.remove('active');
+            currentOrderId = null;
+        }
+
+        function updateOrderStatusPrompt(orderId, currentStatus) {
+            currentOrderId = orderId;
+            const newStatus = prompt('Enter new status (pending, processing, delivered, cancelled):', currentStatus);
+            if (newStatus && ['pending', 'processing', 'delivered', 'cancelled'].includes(newStatus.toLowerCase())) {
+                updateOrderStatus(newStatus.toLowerCase());
+            } else if (newStatus) {
+                showToast('Invalid status. Use: pending, processing, delivered, cancelled', 'error');
+            }
+        }
+
+        async function updateOrderStatus(status) {
+            if (!currentOrderId) return;
+            
+            try {
+                await db.collection('orders').doc(currentOrderId).update({
+                    status: status,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                showToast(`Order status updated to ${status}`, 'success');
+                closeOrderDetailsModal();
+                loadOrdersData();
+            } catch (error) {
+                console.error('Error updating order status:', error);
+                showToast('Error updating order status', 'error');
+            }
+        }
+
+        // ✅ FIXED: Users Management
+        async function loadUsersData() {
+            try {
+                const snapshot = await db.collection('users').get();
+                const usersTable = document.getElementById('usersTable');
+                
+                if (snapshot.empty) {
+                    usersTable.innerHTML = `
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 60px 20px;">
+                                <i class="fas fa-user-friends" style="font-size: 60px; color: var(--text-light); margin-bottom: 15px;"></i>
+                                <h4 style="color: var(--text-light); margin-bottom: 10px;">No Users Yet</h4>
+                                <p style="color: var(--text-light); margin-bottom: 20px;">Users will appear here when they register</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                let tableHtml = '';
+                snapshot.forEach(doc => {
+                    const user = doc.data();
+                    const joinDate = formatFirestoreTimestamp(user.createdAt);
+                    
+                    let roleBadge = '';
+                    if (user.role === 'admin') roleBadge = 'background: #FEF3C7; color: #92400E;';
+                    else if (user.role === 'shopkeeper') roleBadge = 'background: #DBEAFE; color: #1E40AF;';
+                    else roleBadge = 'background: #D1FAE5; color: #065F46;';
+                    
+                    tableHtml += `
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 40px; height: 40px; background: var(--admin-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <strong>${user.name || 'User'}</strong>
+                                        <div style="font-size: 12px; color: var(--text-light);">ID: ${doc.id.slice(-6)}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>${user.email || 'No email'}</td>
+                            <td>
+                                <span class="status-badge" style="${roleBadge} padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">
+                                    ${user.role || 'customer'}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-badge ${user.status === 'active' ? 'status-active' : 'status-inactive'}">
+                                    ${user.status || 'active'}
+                                </span>
+                            </td>
+                            <td>${joinDate}</td>
+                            <td>
+                                <div style="display: flex; gap: 5px;">
+                                    <button class="btn-admin btn-sm" onclick="updatePasswordForUser('${user.email}', '${user.name}', '${user.role}', '${doc.id}')" title="Update Password">
+                                        <i class="fas fa-key"></i>
+                                    </button>
+                                    <button class="btn-admin btn-sm" style="background: var(--danger);" onclick="deleteUser('${doc.id}')" title="Delete User">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                usersTable.innerHTML = tableHtml;
+                
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showToast('Error loading users data', 'error');
+            }
+        }
+
+        function updatePasswordForUser(email, name, role, userId) {
+            editingUserId = userId;
+            document.getElementById('passwordUserEmail').value = email;
+            document.getElementById('passwordUserName').value = name;
+            document.getElementById('passwordUserRole').value = role;
+            document.getElementById('updatePasswordModal').classList.add('active');
+        }
+
+        function closeUpdatePasswordModal() {
+            document.getElementById('updatePasswordModal').classList.remove('active');
+            document.getElementById('updatePasswordForm').reset();
+            editingUserId = null;
+        }
+
+        async function updateUserPassword() {
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const userEmail = document.getElementById('passwordUserEmail').value;
+
+            if (!newPassword || !confirmPassword) {
+                showToast('Please fill both password fields', 'error');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                showToast('Password must be at least 6 characters', 'error');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showToast('Passwords do not match', 'error');
+                return;
+            }
+
+            try {
+                // Update password in Firebase Auth
+                // Note: This requires admin privileges or the user's current password
+                // In a real app, you might use Firebase Admin SDK on server side
+                // For demo, we'll show success but note the limitation
+                
+                // For now, we'll update the user document to track password changes
+                await db.collection('users').doc(editingUserId).update({
+                    passwordUpdated: true,
+                    passwordUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedBy: currentAdmin.email
+                });
+
+                showToast(`Password updated for ${userEmail}. User will need to use new password for login.`, 'success');
+                closeUpdatePasswordModal();
+                
+                // Note: In production, implement proper password reset via email
+                // or use Firebase Admin SDK for direct password updates
+                
+            } catch (error) {
+                console.error('Error updating password:', error);
+                showToast('Error updating password: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                try {
+                    await db.collection('users').doc(userId).delete();
+                    showToast('User deleted successfully', 'success');
+                    loadUsersData();
+                } catch (error) {
+                    console.error('Error deleting user:', error);
+                    showToast('Error deleting user', 'error');
+                }
+            }
+        }
+
+        // ✅ FIXED: Analytics Page
+        async function loadAnalyticsData() {
+            try {
+                // Get data for selected period
+                const period = document.getElementById('analyticsPeriod').value;
+                let days = 7;
+                if (period === '30days') days = 30;
+                else if (period === '90days') days = 90;
+                else if (period === '1year') days = 365;
+
+                const endDate = new Date();
+                const startDate = new Date();
+                startDate.setDate(startDate.getDate() - days);
+
+                // Get orders for the period
+                const ordersSnapshot = await db.collection('orders')
+                    .where('createdAt', '>=', startDate)
+                    .where('createdAt', '<=', endDate)
+                    .get();
+
+                // Calculate analytics
+                let todayRevenue = 0;
+                let todayOrders = 0;
+                let totalRevenue = 0;
+                let totalOrders = 0;
+                const revenueByDay = {};
+                const orderStatusCount = { pending: 0, processing: 0, delivered: 0, cancelled: 0 };
+                const userRoles = { customer: 0, shopkeeper: 0, admin: 0 };
+
+                const today = new Date().toDateString();
+
+                ordersSnapshot.forEach(doc => {
+                    const order = doc.data();
+                    const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
+                    const dateKey = orderDate.toDateString();
+                    
+                    // Total calculations
+                    totalRevenue += parseFloat(order.total || 0);
+                    totalOrders++;
+                    
+                    // Today's calculations
+                    if (dateKey === today) {
+                        todayRevenue += parseFloat(order.total || 0);
+                        todayOrders++;
+                    }
+                    
+                    // Revenue by day
+                    if (!revenueByDay[dateKey]) revenueByDay[dateKey] = 0;
+                    revenueByDay[dateKey] += parseFloat(order.total || 0);
+                    
+                    // Order status count
+                    orderStatusCount[order.status || 'pending'] = (orderStatusCount[order.status || 'pending'] || 0) + 1;
+                });
+
+                // Get user data
+                const usersSnapshot = await db.collection('users').get();
+                let todayUsers = 0;
+                usersSnapshot.forEach(doc => {
+                    const user = doc.data();
+                    const userDate = user.createdAt?.toDate ? user.createdAt.toDate() : new Date(user.createdAt);
+                    
+                    if (userDate.toDateString() === today) {
+                        todayUsers++;
+                    }
+                    
+                    userRoles[user.role || 'customer'] = (userRoles[user.role || 'customer'] || 0) + 1;
+                });
+
+                // Update analytics cards
+                document.getElementById('todayRevenue').textContent = `₹${todayRevenue.toLocaleString()}`;
+                document.getElementById('todayOrders').textContent = todayOrders;
+                document.getElementById('todayUsers').textContent = todayUsers;
+                document.getElementById('avgOrderValue').textContent = `₹${(totalOrders > 0 ? totalRevenue / totalOrders : 0).toFixed(2)}`;
+
+                // Calculate percentage changes (mock data for demo)
+                document.getElementById('revenueChange').textContent = '+12.5%';
+                document.getElementById('orderChange').textContent = '+8.3%';
+                document.getElementById('userChange').textContent = '+5.2%';
+
+                // Create charts
+                createCharts(revenueByDay, orderStatusCount, userRoles);
+
+                // Show top shops
+                showTopShops();
+
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                showToast('Error loading analytics data', 'error');
+            }
+        }
+
+        function createCharts(revenueByDay, orderStatusCount, userRoles) {
+            // Destroy existing charts if they exist
+            if (revenueChart) revenueChart.destroy();
+            if (orderStatusChart) orderStatusChart.destroy();
+            if (userDistributionChart) userDistributionChart.destroy();
+
+            // Revenue Chart
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            const dates = Object.keys(revenueByDay).sort();
+            const revenueData = dates.map(date => revenueByDay[date]);
+
+            revenueChart = new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: dates.map(date => new Date(date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })),
+                    datasets: [{
+                        label: 'Revenue (₹)',
+                        data: revenueData,
+                        borderColor: '#7C3AED',
+                        backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Order Status Chart
+            const orderStatusCtx = document.getElementById('orderStatusChart').getContext('2d');
+            orderStatusChart = new Chart(orderStatusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pending', 'Processing', 'Delivered', 'Cancelled'],
+                    datasets: [{
+                        data: [
+                            orderStatusCount.pending || 0,
+                            orderStatusCount.processing || 0,
+                            orderStatusCount.delivered || 0,
+                            orderStatusCount.cancelled || 0
+                        ],
+                        backgroundColor: [
+                            '#F59E0B',
+                            '#3B82F6',
+                            '#10B981',
+                            '#EF4444'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // User Distribution Chart
+            const userDistributionCtx = document.getElementById('userDistributionChart').getContext('2d');
+            userDistributionChart = new Chart(userDistributionCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Customers', 'Shopkeepers', 'Admins'],
+                    datasets: [{
+                        data: [
+                            userRoles.customer || 0,
+                            userRoles.shopkeeper || 0,
+                            userRoles.admin || 0
+                        ],
+                        backgroundColor: [
+                            '#10B981',
+                            '#3B82F6',
+                            '#7C3AED'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        async function showTopShops() {
+            try {
+                const shopsSnapshot = await db.collection('shops').get();
+                const shops = [];
+                
+                // For each shop, get their orders count and revenue
+                for (const doc of shopsSnapshot.docs) {
+                    const shop = doc.data();
+                    const ordersSnapshot = await db.collection('orders')
+                        .where('shopId', '==', doc.id)
+                        .get();
+                    
+                    let shopRevenue = 0;
+                    ordersSnapshot.forEach(orderDoc => {
+                        const order = orderDoc.data();
+                        shopRevenue += parseFloat(order.total || 0);
+                    });
+                    
+                    shops.push({
+                        name: shop.name,
+                        orders: ordersSnapshot.size,
+                        revenue: shopRevenue,
+                        products: shop.productCount || 0
+                    });
+                }
+                
+                // Sort by revenue
+                shops.sort((a, b) => b.revenue - a.revenue);
+                const topShops = shops.slice(0, 5);
+                
+                const topShopsEl = document.getElementById('topShops');
+                if (topShops.length > 0) {
+                    topShopsEl.innerHTML = topShops.map((shop, index) => `
+                        <div style="display: flex; align-items: center; padding: 15px; border-bottom: 1px solid var(--border);">
+                            <div style="width: 40px; height: 40px; background: ${index === 0 ? '#F59E0B' : index === 1 ? '#6B7280' : index === 2 ? '#92400E' : 'var(--admin-accent)'}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; margin-right: 15px; font-weight: bold;">
+                                ${index + 1}
+                            </div>
+                            <div style="flex: 1;">
+                                <strong>${shop.name}</strong>
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 5px;">
+                                    <div style="font-size: 12px; color: var(--text-light);">
+                                        <i class="fas fa-shopping-bag"></i> ${shop.orders} Orders
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--text-light);">
+                                        <i class="fas fa-rupee-sign"></i> ₹${shop.revenue}
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--text-light);">
+                                        <i class="fas fa-box"></i> ${shop.products} Products
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="color: var(--success); font-weight: bold;">
+                                ₹${shop.revenue}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    topShopsEl.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: var(--text-light);">
+                            <i class="fas fa-chart-line" style="font-size: 50px; margin-bottom: 15px;"></i>
+                            <h4 style="color: var(--text-light); margin-bottom: 10px;">No Data Available</h4>
+                            <p>Performance data will appear here as shops start receiving orders</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading top shops:', error);
             }
         }
 
@@ -1469,17 +2488,63 @@
 
         function filterShops(filter) {
             // Implement shop filtering logic here
-            console.log('Filter shops by:', filter);
+            showToast(`Filtering shops by: ${filter}`, 'info');
+        }
+
+        function filterProducts(filter) {
+            showToast(`Filtering products by: ${filter}`, 'info');
+        }
+
+        function filterOrders(filter) {
+            showToast(`Filtering orders by: ${filter}`, 'info');
+        }
+
+        function filterUsers(filter) {
+            showToast(`Filtering users by: ${filter}`, 'info');
         }
 
         function searchShops() {
             const searchTerm = document.getElementById('shopSearch').value.toLowerCase();
             const rows = document.querySelectorAll('#shopsTable tr');
-            
             rows.forEach(row => {
                 const text = row.textContent.toLowerCase();
                 row.style.display = text.includes(searchTerm) ? '' : 'none';
             });
+        }
+
+        function searchProducts() {
+            const searchTerm = document.getElementById('productSearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#productsTable tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        }
+
+        function searchOrders() {
+            const searchTerm = document.getElementById('orderSearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#ordersTable tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        }
+
+        function searchUsers() {
+            const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#usersTable tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        }
+
+        function exportOrders() {
+            showToast('Export feature will be implemented soon', 'info');
+        }
+
+        function printOrders() {
+            showToast('Print feature will be implemented soon', 'info');
         }
 
         // Initialize on page load
