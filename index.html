@@ -1505,6 +1505,8 @@ const secondaryApp = firebase.apps.find(app => app.name === "Secondary")
     ? firebase.app("Secondary")
     : firebase.initializeApp(firebaseConfig, "Secondary");
 const secondaryAuth = secondaryApp.auth();
+secondaryAuth.setPersistence(firebase.auth.Auth.Persistence.NONE);
+
 
 // ✅ CREATE / UPDATE SHOP
 async function createShopAccount() {
@@ -1541,11 +1543,17 @@ async function createShopAccount() {
             const tempPassword = generateTempPassword();
 
             // ✅ CREATE USER USING SECONDARY AUTH (NO 400 ERROR)
-            const userCredential = await secondaryAuth.createUserWithEmailAndPassword(
-                shopData.email,
-                tempPassword
-            );
-            const userId = userCredential.user.uid;
+await secondaryAuth.setPersistence(firebase.auth.Auth.Persistence.NONE);
+
+const userCredential = await secondaryAuth.createUserWithEmailAndPassword(
+    shopData.email,
+    tempPassword
+);
+const userId = userCredential.user.uid;
+
+// ✅ IMPORTANT: logout secondary immediately
+await secondaryAuth.signOut();
+
 
             // 🔹 SHOP DOCUMENT
             await db.collection('shops').doc(userId).set({
