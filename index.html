@@ -1496,11 +1496,18 @@
         }
 
         function closeCreateShopModal() {
-            document.getElementById('createShopModal').classList.remove('active');
-            editingShopId = null;
-        }
+    document.getElementById('createShopModal').classList.remove('active');
+    editingShopId = null;
+}
 
-        async function createShopAccount() {
+// ✅ Secondary Firebase App (ADD ONCE ONLY)
+const secondaryApp = firebase.apps.find(app => app.name === "Secondary")
+    ? firebase.app("Secondary")
+    : firebase.initializeApp(firebaseConfig, "Secondary");
+const secondaryAuth = secondaryApp.auth();
+
+// ✅ CREATE / UPDATE SHOP
+async function createShopAccount() {
     const shopData = {
         name: document.getElementById('shopName').value.trim(),
         email: document.getElementById('ownerEmail').value.trim(),
@@ -1513,6 +1520,7 @@
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
+    // ✅ VALIDATION (MUST BE HERE)
     if (!shopData.name || !shopData.email || !shopData.ownerName || !shopData.category || !shopData.phone || !shopData.address) {
         showToast('Please fill all required fields', 'error');
         return;
@@ -1520,44 +1528,33 @@
 
     try {
         if (editingShopId) {
-            // Update existing shop
+            // 🔹 UPDATE SHOP ONLY
             await db.collection('shops').doc(editingShopId).update({
                 ...shopData,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            const newPassword = document.getElementById('shopPassword').value;
-            const confirmPassword = document.getElementById('shopConfirmPassword').value;
-
-            if (newPassword && confirmPassword) {
-                if (newPassword.length < 6) {
-                    showToast('Password must be at least 6 characters', 'error');
-                    return;
-                }
-                if (newPassword !== confirmPassword) {
-                    showToast('Passwords do not match', 'error');
-                    return;
-                }
-
-                // ⚠️ This will only work for CURRENT logged-in user
-                showToast('Password change requires user login. Use Forgot Password.', 'warning');
-            } else {
-                showToast('Shop updated successfully', 'success');
-            }
+            showToast('Shop updated successfully', 'success');
 
         } else {
-            // Create new shop
+            // 🔹 CREATE NEW SHOP
             const tempPassword = generateTempPassword();
 
-            const userCredential = await auth.createUserWithEmailAndPassword(shopData.email, tempPassword);
+            // ✅ CREATE USER USING SECONDARY AUTH (NO 400 ERROR)
+            const userCredential = await secondaryAuth.createUserWithEmailAndPassword(
+                shopData.email,
+                tempPassword
+            );
             const userId = userCredential.user.uid;
 
+            // 🔹 SHOP DOCUMENT
             await db.collection('shops').doc(userId).set({
                 ...shopData,
                 id: userId,
                 createdBy: currentAdmin.email
             });
 
+            // 🔹 USER DOCUMENT
             await db.collection('users').doc(userId).set({
                 email: shopData.email,
                 name: shopData.ownerName,
@@ -1566,6 +1563,9 @@
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 createdBy: currentAdmin.email
             });
+
+            // 🔹 LOGOUT SECONDARY AUTH
+            await secondaryAuth.signOut();
 
             showToast(`Shop created! Email: ${shopData.email}, Password: ${tempPassword}`, 'success');
 
