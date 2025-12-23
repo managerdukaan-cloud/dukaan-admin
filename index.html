@@ -1501,88 +1501,87 @@
         }
 
         async function createShopAccount() {
-            const shopData = {
-                name: document.getElementById('shopName').value.trim(),
-                email: document.getElementById('ownerEmail').value.trim(),
-                ownerName: document.getElementById('ownerName').value.trim(),
-                category: document.getElementById('shopCategory').value,
-                phone: document.getElementById('shopPhone').value.trim(),
-                address: document.getElementById('shopAddress').value.trim(),
-                description: document.getElementById('shopDescription').value.trim(),
-                status: 'active',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
+    const shopData = {
+        name: document.getElementById('shopName').value.trim(),
+        email: document.getElementById('ownerEmail').value.trim(),
+        ownerName: document.getElementById('ownerName').value.trim(),
+        category: document.getElementById('shopCategory').value,
+        phone: document.getElementById('shopPhone').value.trim(),
+        address: document.getElementById('shopAddress').value.trim(),
+        description: document.getElementById('shopDescription').value.trim(),
+        status: 'active',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
 
-            if (!shopData.name || !shopData.email || !shopData.ownerName || !shopData.category || !shopData.phone || !shopData.address) {
-                showToast('Please fill all required fields', 'error');
-                return;
-            }
+    if (!shopData.name || !shopData.email || !shopData.ownerName || !shopData.category || !shopData.phone || !shopData.address) {
+        showToast('Please fill all required fields', 'error');
+        return;
+    }
 
-            try {
-                if (editingShopId) {
-                    // Update existing shop
-                    await db.collection('shops').doc(editingShopId).update({
-                        ...shopData,
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    
-                    // Check if password needs to be updated
-                    const newPassword = document.getElementById('shopPassword').value;
-                    const confirmPassword = document.getElementById('shopConfirmPassword').value;
-                    
-                    if (newPassword && confirmPassword) {
-                        if (newPassword.length < 6) {
-                            showToast('Password must be at least 6 characters', 'error');
-                            return;
-                        }
-                        if (newPassword !== confirmPassword) {
-                            showToast('Passwords do not match', 'error');
-                            return;
-                        }
-                        
-                        // Update password in Firebase Auth
-                        await auth.updatePassword(shopData.email, newPassword);
-                        showToast('Shop and password updated successfully', 'success');
-                    } else {
-                        showToast('Shop updated successfully', 'success');
-                    }
-                    
-                } else {
-                    // Create new shop
-                    const tempPassword = generateTempPassword();
-                    
-                    // Create Firebase Auth user
-                    const userCredential = await auth.createUserWithEmailAndPassword(shopData.email, tempPassword);
-                    const userId = userCredential.user.uid;
+    try {
+        if (editingShopId) {
+            // Update existing shop
+            await db.collection('shops').doc(editingShopId).update({
+                ...shopData,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
 
-                    // Create shop document
-                    await db.collection('shops').doc(userId).set({
-                        ...shopData,
-                        id: userId,
-                        createdBy: currentAdmin.email
-                    });
+            const newPassword = document.getElementById('shopPassword').value;
+            const confirmPassword = document.getElementById('shopConfirmPassword').value;
 
-                    // Create user document
-                    await db.collection('users').doc(userId).set({
-                        email: shopData.email,
-                        name: shopData.ownerName,
-                        role: 'shopkeeper',
-                        shopId: userId,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        createdBy: currentAdmin.email
-                    });
-
-                    showToast(`Shop created! Email: ${shopData.email}, Password: ${tempPassword}`, 'success');
+            if (newPassword && confirmPassword) {
+                if (newPassword.length < 6) {
+                    showToast('Password must be at least 6 characters', 'error');
+                    return;
+                }
+                if (newPassword !== confirmPassword) {
+                    showToast('Passwords do not match', 'error');
+                    return;
                 }
 
-                closeCreateShopModal();
-                loadShopsData();
-
-            } catch (error) {
-                console.error('Error creating/updating shop:', error);
-                showToast('Error: ' + error.message, 'error');
+                // ⚠️ This will only work for CURRENT logged-in user
+                showToast('Password change requires user login. Use Forgot Password.', 'warning');
+            } else {
+                showToast('Shop updated successfully', 'success');
             }
+
+        } else {
+            // Create new shop
+            const tempPassword = generateTempPassword();
+
+            const userCredential = await auth.createUserWithEmailAndPassword(shopData.email, tempPassword);
+            const userId = userCredential.user.uid;
+
+            await db.collection('shops').doc(userId).set({
+                ...shopData,
+                id: userId,
+                createdBy: currentAdmin.email
+            });
+
+            await db.collection('users').doc(userId).set({
+                email: shopData.email,
+                name: shopData.ownerName,
+                role: 'shopkeeper',
+                shopId: userId,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                createdBy: currentAdmin.email
+            });
+
+            showToast(`Shop created! Email: ${shopData.email}, Password: ${tempPassword}`, 'success');
+
+            alert(
+              `Shop Created Successfully!\n\nEmail: ${shopData.email}\nPassword: ${tempPassword}\n\nPlease save this password.`
+            );
+
+            closeCreateShopModal();
+            loadShopsData();
         }
+
+    } catch (error) {
+        console.error('Error creating/updating shop:', error);
+        showToast('Error: ' + error.message, 'error');
+    }
+}
 
         // ✅ FIXED: Load all shops without isActive filter
         async function loadShopsData() {
